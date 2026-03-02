@@ -1,20 +1,15 @@
-"""/kill, /stealthkill command handlers."""
+"""/kill, /stealthkill command handlers — creates pending kills with dispute window."""
 
 import logging
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes, CommandHandler
 
 from services.registration import get_player, find_player_by_identifier
-from services.combat import validate_kill, execute_kill
+from services.combat import validate_kill
 from services.game_manager import get_game_state
-from utils.formatting import (
-    format_kill_announcement,
-    format_death_dm,
-    format_leaderboard,
-    format_team_leaderboard,
-    send_to_group,
-)
-from config import COOLDOWN_BALL, COOLDOWN_STEALTH
+from services.pending_kill import create_pending_kill, has_pending_kill_against
+from utils.formatting import player_mention
+from config import KILL_DISPUTE_WINDOW
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +35,7 @@ async def stealthkill_photo_command(update: Update, context: ContextTypes.DEFAUL
 
 
 async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill_type: str):
-    """Core kill processing logic for both normal and stealth kills."""
+    """Core kill processing logic — creates a pending kill instead of executing immediately."""
     user = update.effective_user
 
     # Get killer
@@ -61,7 +56,6 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
         return
 
     # Join all args as the identifier (supports multi-word display names)
-    # e.g. /kill John Doe  or  /kill @johndoe
     identifier = " ".join(context.args)
     target = find_player_by_identifier(identifier)
     if not target:
@@ -98,56 +92,59 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
         await update.message.reply_text(error_msg, parse_mode="HTML")
         return
 
-    # Execute kill
-    kill_event, bounty_bonus = execute_kill(
+    # Check for duplicate pending kill on same target
+    if has_pending_kill_against(target.user_id):
+        await update.message.reply_text(
+            f"⚠️ There's already a pending kill on {target.name}. "
+            f"Wait for it to resolve before reporting another."
+        )
+        return
+
+    # Create pending kill (NOT executed yet)
+    pending = create_pending_kill(
         killer, target, kill_type,
         witness=witness,
         photo_file_id=photo_file_id,
     )
 
-    # Refresh player data after kill
-    killer = get_player(user.id)
-    target = get_player(kill_event.target_id)
+    minutes = int(KILL_DISPUTE_WINDOW / 60)
+    target_mention = player_mention(target.username, target.name)
+    killer_mention = player_mention(killer.username, killer.name)
 
-    # Announce to group
-    announcement = format_kill_announcement(
-        killer.to_dict(), target.to_dict(), kill_type, bounty_bonus
-    )
-
-    # Send to current chat
+    # Reply to killer
     await update.message.reply_text(
-        f"✅ Kill confirmed!\n\n{announcement}",
+        f"⏳ Kill reported on <b>{target_mention}</b>!\n\n"
+        f"Waiting for confirmation ({minutes} min window).\n"
+        f"If {target_mention} does not dispute, the kill will be auto-confirmed.",
         parse_mode="HTML",
     )
 
-    # Try to DM the target
-    cooldown_hours = COOLDOWN_STEALTH / 3600 if kill_type == "stealth" else COOLDOWN_BALL / 3600
-    dm_text = format_death_dm(killer.to_dict(), kill_type, cooldown_hours)
+    # DM the target with Accept / Dispute buttons
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Accept Kill", callback_data=f"kill_accept:{pending.id}"),
+            InlineKeyboardButton("❌ Dispute Kill", callback_data=f"kill_dispute:{pending.id}"),
+        ]
+    ])
+
+    kill_type_text = "🗡️ stealth kill (post-it)" if kill_type == "stealth" else "☠️ normal kill (ball)"
+
     try:
         await context.bot.send_message(
             chat_id=target.user_id,
-            text=dm_text,
+            text=(
+                f"⚠️ <b>Kill Report</b>\n\n"
+                f"<b>{killer_mention}</b> reported a {kill_type_text} on you!\n\n"
+                f"You have <b>{minutes} minutes</b> to respond.\n"
+                f"If you don't respond, the kill will be <b>auto-confirmed</b>.\n\n"
+                f"Do you accept or dispute this kill?"
+            ),
             parse_mode="HTML",
+            reply_markup=keyboard,
         )
     except Exception as e:
         logger.warning(f"Could not DM target {target.user_id}: {e}")
-
-    # Post to group chat if this isn't the group
-    group_id = game.group_chat_id
-    if group_id and update.effective_chat.id != group_id:
-        try:
-            await send_to_group(context.bot, announcement, game)
-        except Exception as e:
-            logger.warning(f"Could not post to group {group_id}: {e}")
-
-    # Auto-post leaderboard update to group
-    if group_id:
-        try:
-            from services.leaderboard import get_individual_rankings
-            rankings = get_individual_rankings()
-            lb_text = format_leaderboard(rankings)
-            team_text = format_team_leaderboard(rankings)
-            await send_to_group(context.bot, f"{lb_text}\n{team_text}", game)
-        except Exception as e:
-            logger.warning(f"Could not post leaderboard update: {e}")
-
+        await update.message.reply_text(
+            f"⚠️ Could not DM {target_mention}. They may need to start the bot first.\n"
+            f"The kill will auto-confirm in {minutes} minutes if not disputed."
+        )

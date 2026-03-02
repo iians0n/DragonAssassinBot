@@ -25,6 +25,9 @@ COOLDOWN_STEALTH = 3600  # 1 hour
 BOUNTY_DURATION = 86400  # 24 hours
 MIN_BOUNTY = 1
 
+# Kill dispute window (seconds)
+KILL_DISPUTE_WINDOW = 900  # 15 minutes
+
 # Rate limiting
 MAX_COMMANDS_PER_MINUTE = 10
 

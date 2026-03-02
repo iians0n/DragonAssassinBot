@@ -158,7 +158,7 @@ async def resetkill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_player(player)
 
     await update.message.reply_text(
-        f"✅ <b>{player.name}</b> (@{username}) has been revived! 💚",
+        f"✅ <b>{player.name}</b> (@{player.username}) has been revived! 💚",
         parse_mode="HTML",
     )
 

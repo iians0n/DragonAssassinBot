@@ -60,7 +60,13 @@ def format_leaderboard(players: List[dict]) -> str:
     )
 
     medals = {0: "🥇", 1: "🥈", 2: "🥉"}
-    lines = ["🏆 <b>ASSASSINS LEADERBOARD</b> 🏆", "", "👤 <b>Individual Rankings:</b>"]
+    
+    from datetime import datetime
+    import pytz
+    sgt = pytz.timezone("Asia/Singapore")
+    now_str = datetime.now(sgt).strftime("%d %b %Y, %I:%M %p SGT")
+    
+    lines = ["🏆 <b>ASSASSINS LEADERBOARD</b> 🏆", f"🕐 <i>{now_str}</i>", "", "👤 <b>Individual Rankings:</b>"]
 
     for i, p in enumerate(sorted_players[:10]):
         kills_total = p["kills_normal"] + p["kills_stealth"]

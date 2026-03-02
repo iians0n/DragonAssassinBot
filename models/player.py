@@ -45,11 +45,11 @@ class Player:
         return self.status == "alive"
 
     def can_be_killed(self) -> bool:
-        """Players can be killed if alive OR in cooldown (vulnerable)."""
+        """Players can only be killed if alive (not in cooldown)."""
         if self.status == "cooldown" and time.time() >= self.cooldown_until:
             self.status = "alive"
             self.cooldown_until = 0.0
-        return self.status in ("alive", "cooldown")
+        return self.status == "alive"
 
     def to_dict(self) -> dict:
         return asdict(self)
