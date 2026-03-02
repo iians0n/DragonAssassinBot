@@ -96,6 +96,13 @@ class JsonStore:
     def save_kill_log(self, kills: list):
         self.save("kill_log", kills)
 
+    def load_pending_kills(self) -> list:
+        """Load pending kills awaiting confirmation/dispute."""
+        return self.load("pending_kills", default=[])
+
+    def save_pending_kills(self, pending_kills: list):
+        self.save("pending_kills", pending_kills)
+
 
 # Singleton instance
 store = JsonStore()

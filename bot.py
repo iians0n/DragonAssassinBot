@@ -4,7 +4,7 @@ import logging
 from datetime import time as dt_time
 
 import pytz
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
 from config import BOT_TOKEN, TIMEZONE
 from handlers.start import start_command, profile_command, get_registration_handler
@@ -12,6 +12,7 @@ from handlers.kill import kill_command, stealthkill_command, stealthkill_photo_c
 from handlers.leaderboard import leaderboard_command, team_command, stats_command
 from handlers.bounty import bounty_command, bounties_command
 from handlers.countdown import countdown_command
+from handlers.dispute import kill_callback_handler, resolvekill_command
 from handlers.admin import (
     startgame_command,
     endgame_command,
@@ -23,6 +24,8 @@ from handlers.admin import (
 from services.scheduler import (
     cooldown_check_job,
     bounty_expiry_job,
+    pending_kill_expiry_job,
+    leaderboard_update_job,
     game_day_start_job,
     game_day_warning_job,
     game_day_end_job,
@@ -85,7 +88,11 @@ def main():
     app.add_handler(CommandHandler("pausegame", pausegame_command))
     app.add_handler(CommandHandler("addplayer", addplayer_command))
     app.add_handler(CommandHandler("resetkill", resetkill_command))
+    app.add_handler(CommandHandler("resolvekill", resolvekill_command))
     app.add_handler(CommandHandler("admin", admin_command))
+
+    # Kill dispute callbacks (Accept / Dispute inline buttons)
+    app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))
 
     # --- Schedule background jobs ---
     job_queue = app.job_queue
@@ -96,6 +103,12 @@ def main():
 
     # Bounty expiry check — every 5 minutes
     job_queue.run_repeating(bounty_expiry_job, interval=300, first=30)
+
+    # Pending kill auto-confirm — every 60 seconds
+    job_queue.run_repeating(pending_kill_expiry_job, interval=60, first=15)
+
+    # Leaderboard update — every 30 minutes
+    job_queue.run_repeating(leaderboard_update_job, interval=1800, first=60)
 
     # Daily notifications (SGT)
     job_queue.run_daily(game_day_start_job, time=dt_time(hour=9, minute=0, tzinfo=tz))
