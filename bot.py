@@ -13,7 +13,7 @@ from handlers.leaderboard import leaderboard_command, team_command, stats_comman
 from handlers.bounty import bounty_command, bounties_command
 from handlers.countdown import countdown_command
 from handlers.achievements import achievements_command
-from handlers.dispute import kill_callback_handler, resolvekill_command
+from handlers.dispute import kill_callback_handler, admin_resolve_callback_handler, resolvekill_command
 from handlers.admin import (
     startgame_command,
     endgame_command,
@@ -98,6 +98,7 @@ def main():
 
     # Kill dispute callbacks (Accept / Dispute inline buttons)
     app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))
+    app.add_handler(CallbackQueryHandler(admin_resolve_callback_handler, pattern=r"^admin_(approve|reject):"))
 
     # --- Schedule background jobs ---
     job_queue = app.job_queue
