@@ -27,13 +27,14 @@ class KillEvent:
     @classmethod
     def create(cls, killer_id: int, target_id: int, kill_type: str,
                witness: str = "", photo_file_id: str = "",
-               points_awarded: int = 0, bounty_claimed: int = 0) -> "KillEvent":
+               points_awarded: int = 0, bounty_claimed: int = 0,
+               timestamp: float = 0.0) -> "KillEvent":
         return cls(
             id=str(uuid.uuid4()),
             killer_id=killer_id,
             target_id=target_id,
             kill_type=kill_type,
-            timestamp=time.time(),
+            timestamp=timestamp or time.time(),
             witness=witness,
             photo_file_id=photo_file_id,
             points_awarded=points_awarded,
