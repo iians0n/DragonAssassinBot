@@ -49,7 +49,9 @@ def has_pending_kill_against(target_id: int) -> bool:
     return False
 
 
-def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int]:
+def confirm_pending_kill(pending_kill_id: str,
+                         resolution_type: str = "confirmed by target"
+                         ) -> Tuple[Optional[dict], int]:
     """
     Confirm a pending kill — execute it and update stats.
     Returns (kill_event_dict, bounty_bonus) or (None, 0) if not found/invalid.
@@ -74,6 +76,7 @@ def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int]:
     if not killer or not target:
         logger.warning(f"Pending kill {pk.id}: killer or target not found")
         target_data["status"] = "rejected"
+        target_data["resolution_type"] = "rejected (player not found)"
         store.save_pending_kills(pending_kills)
         return None, 0
 
@@ -82,10 +85,12 @@ def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int]:
         killer, target, pk.kill_type,
         witness=pk.witness,
         photo_file_id=pk.photo_file_id,
+        original_timestamp=pk.timestamp,
     )
 
     # Update pending kill status
     target_data["status"] = "confirmed"
+    target_data["resolution_type"] = resolution_type
     store.save_pending_kills(pending_kills)
 
     return kill_event.to_dict(), bounty_bonus
@@ -127,6 +132,7 @@ def resolve_disputed_kill(pending_kill_id: str, approved: bool,
 
             if approved:
                 pk_data["status"] = "confirmed"
+                pk_data["resolution_type"] = "approved by admin"
                 store.save_pending_kills(pending_kills)
                 # Now execute the kill
                 pk = PendingKill.from_dict(pk_data)
@@ -138,10 +144,12 @@ def resolve_disputed_kill(pending_kill_id: str, approved: bool,
                     killer, target, pk.kill_type,
                     witness=pk.witness,
                     photo_file_id=pk.photo_file_id,
+                    original_timestamp=pk.timestamp,
                 )
                 return kill_event.to_dict(), bounty_bonus, pk
             else:
                 pk_data["status"] = "rejected"
+                pk_data["resolution_type"] = "rejected by admin"
                 store.save_pending_kills(pending_kills)
                 return None, 0, PendingKill.from_dict(pk_data)
 

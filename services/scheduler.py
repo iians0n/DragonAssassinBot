@@ -108,7 +108,7 @@ async def pending_kill_expiry_job(context: ContextTypes.DEFAULT_TYPE):
     game = get_game_state()
 
     for pk in expired:
-        kill_event_dict, bounty_bonus = confirm_pending_kill(pk.id)
+        kill_event_dict, bounty_bonus = confirm_pending_kill(pk.id, resolution_type="auto-confirmed")
         if not kill_event_dict:
             continue
 

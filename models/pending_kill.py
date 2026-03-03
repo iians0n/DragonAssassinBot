@@ -20,6 +20,7 @@ class PendingKill:
     status: str = "pending"   # "pending" | "confirmed" | "disputed" | "rejected"
     disputed_reason: str = ""
     resolved_by: int = 0      # admin user_id who resolved (0 = N/A)
+    resolution_type: str = "" # e.g. "confirmed by target", "auto-confirmed", "approved by admin", "rejected by admin"
 
     def is_expired(self) -> bool:
         """Check if the dispute window has passed."""

@@ -53,9 +53,11 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
 
 
 def execute_kill(killer: Player, target: Player, kill_type: str,
-                 witness: str = "", photo_file_id: str = "") -> Tuple[KillEvent, int]:
+                 witness: str = "", photo_file_id: str = "",
+                 original_timestamp: float = 0.0) -> Tuple[KillEvent, int]:
     """
     Execute a validated kill. Updates player states and returns (KillEvent, bounty_bonus).
+    If original_timestamp is provided, it is used as the kill time in the log.
     """
     now = time.time()
 
@@ -93,6 +95,7 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
         photo_file_id=photo_file_id,
         points_awarded=total_points,
         bounty_claimed=bounty_bonus,
+        timestamp=original_timestamp,
     )
 
     kills = store.load_kill_log()
