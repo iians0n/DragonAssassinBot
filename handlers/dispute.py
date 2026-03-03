@@ -1,8 +1,11 @@
 """Handlers for kill dispute callbacks and admin resolution."""
 
 import logging
-from telegram import Update
+from datetime import datetime
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
+
+import pytz
 
 from services.pending_kill import (
     get_pending_kill,
@@ -17,7 +20,7 @@ from utils.formatting import (
     send_to_group,
     player_mention,
 )
-from config import COOLDOWN_BALL, COOLDOWN_STEALTH
+from config import COOLDOWN_BALL, COOLDOWN_STEALTH, TIMEZONE
 
 logger = logging.getLogger(__name__)
 
@@ -103,30 +106,156 @@ async def _handle_dispute(query, context, pk):
     except Exception as e:
         logger.warning(f"Could not notify killer about dispute: {e}")
 
-    # Notify all admins
+    # Format kill time for the admin notification
+    try:
+        tz = pytz.timezone(TIMEZONE)
+        kill_time = datetime.fromtimestamp(pk.timestamp, tz=tz).strftime("%d %b, %I:%M:%S %p SGT")
+    except Exception:
+        kill_time = "Unknown"
+
+    # Build inline buttons for admins
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Approve Kill", callback_data=f"admin_approve:{pk.id}"),
+            InlineKeyboardButton("❌ Reject Kill", callback_data=f"admin_reject:{pk.id}"),
+        ]
+    ])
+
+    # Notify all admins with a friendly message and track sent messages
     game = get_game_state()
+    admin_messages = []  # list of (chat_id, message_id)
     for admin_id in game.admin_ids:
         try:
-            await context.bot.send_message(
+            msg = await context.bot.send_message(
                 chat_id=admin_id,
                 text=(
-                    f"🔔 <b>Kill Dispute</b>\n\n"
-                    f"Killer: <b>{killer_name}</b>\n"
-                    f"Target: <b>{target_name}</b>\n"
-                    f"Type: {pk.kill_type}\n"
-                    f"Kill ID: <code>{pk.id}</code>\n\n"
-                    f"Use:\n"
-                    f"<code>/resolvekill {pk.id} approve</code>\n"
-                    f"<code>/resolvekill {pk.id} reject</code>"
+                    f"🔔 <b>Kill Dispute — Needs Your Review</b>\n\n"
+                    f"🗡️ <b>{killer_name}</b> claims to have killed <b>{target_name}</b>\n"
+                    f"⏰ Kill reported at {kill_time}\n"
+                    f"🎯 Type: {pk.kill_type}\n\n"
+                    f"<b>{target_name}</b> disputes this kill.\n"
+                    f"Please review and tap a button below:"
                 ),
                 parse_mode="HTML",
+                reply_markup=buttons,
             )
+            admin_messages.append((admin_id, msg.message_id))
         except Exception as e:
             logger.warning(f"Could not notify admin {admin_id} about dispute: {e}")
 
+    # Store admin message IDs so we can update them when resolved
+    if "dispute_messages" not in context.bot_data:
+        context.bot_data["dispute_messages"] = {}
+    context.bot_data["dispute_messages"][pk.id] = admin_messages
+
+
+async def admin_resolve_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle admin Approve / Reject inline button presses for disputed kills."""
+    query = update.callback_query
+    user_id = query.from_user.id
+
+    if not is_admin(user_id):
+        await query.answer("❌ Only admins can resolve disputes.", show_alert=True)
+        return
+
+    await query.answer()
+
+    data = query.data  # e.g. "admin_approve:uuid" or "admin_reject:uuid"
+    if ":" not in data:
+        return
+
+    action, pending_kill_id = data.split(":", 1)
+    approved = action == "admin_approve"
+
+    kill_event_dict, bounty_bonus, pk = resolve_disputed_kill(
+        pending_kill_id, approved, user_id
+    )
+
+    if pk is None:
+        await query.edit_message_text("❌ Kill not found or not in disputed status.")
+        return
+
+    # Get the name of the admin who resolved
+    admin_name = query.from_user.first_name or "Admin"
+
+    killer = get_player(pk.killer_id)
+    target = get_player(pk.target_id)
+    killer_name = killer.name if killer else "Unknown"
+    target_name = target.name if target else "Unknown"
+
+    if approved:
+        resolved_text = (
+            f"✅ <b>Kill Approved</b> by {admin_name}\n\n"
+            f"🗡️ <b>{killer_name}</b> → <b>{target_name}</b>\n"
+            f"Points awarded. Cooldown started for {target_name}."
+        )
+        await query.edit_message_text(resolved_text, parse_mode="HTML")
+        # Run post-kill flow
+        await _post_kill_flow(context, pk, bounty_bonus)
+
+        # Notify both players
+        try:
+            await context.bot.send_message(
+                chat_id=pk.killer_id,
+                text=f"✅ Admin approved your kill on <b>{target_name}</b>!",
+                parse_mode="HTML",
+            )
+        except Exception:
+            pass
+        try:
+            await context.bot.send_message(
+                chat_id=pk.target_id,
+                text=f"⚖️ Admin reviewed the dispute and <b>approved</b> the kill. Cooldown started.",
+                parse_mode="HTML",
+            )
+        except Exception:
+            pass
+    else:
+        resolved_text = (
+            f"❌ <b>Kill Rejected</b> by {admin_name}\n\n"
+            f"🗡️ <b>{killer_name}</b> → <b>{target_name}</b>\n"
+            f"No points awarded. {target_name} is safe."
+        )
+        await query.edit_message_text(resolved_text, parse_mode="HTML")
+        # Notify both players
+        try:
+            await context.bot.send_message(
+                chat_id=pk.killer_id,
+                text=f"❌ Admin rejected your kill on <b>{target_name}</b>. No points awarded.",
+                parse_mode="HTML",
+            )
+        except Exception:
+            pass
+        try:
+            await context.bot.send_message(
+                chat_id=pk.target_id,
+                text=f"⚖️ Admin reviewed the dispute and <b>rejected</b> the kill. You're safe!",
+                parse_mode="HTML",
+            )
+        except Exception:
+            pass
+
+    # Update all other admins' messages for this dispute
+    dispute_messages = context.bot_data.get("dispute_messages", {}).get(pending_kill_id, [])
+    for chat_id, msg_id in dispute_messages:
+        if chat_id == user_id:
+            continue  # already edited via query.edit_message_text
+        try:
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=msg_id,
+                text=resolved_text,
+                parse_mode="HTML",
+            )
+        except Exception as e:
+            logger.warning(f"Could not update admin {chat_id}'s dispute message: {e}")
+
+    # Clean up stored message IDs
+    context.bot_data.get("dispute_messages", {}).pop(pending_kill_id, None)
+
 
 async def resolvekill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /resolvekill <kill_id> approve|reject — admin resolves a disputed kill."""
+    """Handle /resolvekill <kill_id> approve|reject — admin resolves a disputed kill (text fallback)."""
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("❌ This command is for admins only.")
         return
@@ -168,7 +297,6 @@ async def resolvekill_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         # Run post-kill flow
         await _post_kill_flow(context, pk, bounty_bonus, new_achievements)
 
-        # Notify both players
         try:
             await context.bot.send_message(
                 chat_id=pk.killer_id,
@@ -190,7 +318,6 @@ async def resolvekill_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"❌ Kill rejected. <b>{killer_name}</b> → <b>{target_name}</b> voided.",
             parse_mode="HTML",
         )
-        # Notify both players
         try:
             await context.bot.send_message(
                 chat_id=pk.killer_id,
