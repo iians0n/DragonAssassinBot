@@ -12,6 +12,7 @@ from handlers.kill import kill_command, stealthkill_command, stealthkill_photo_c
 from handlers.leaderboard import leaderboard_command, team_command, stats_command
 from handlers.bounty import bounty_command, bounties_command
 from handlers.countdown import countdown_command
+from handlers.achievements import achievements_command
 from handlers.dispute import kill_callback_handler, resolvekill_command
 from handlers.admin import (
     startgame_command,
@@ -81,6 +82,10 @@ def main():
 
     # Countdown
     app.add_handler(CommandHandler("countdown", countdown_command))
+
+    # Achievements
+    app.add_handler(CommandHandler("achievements", achievements_command))
+    app.add_handler(CommandHandler("badges", achievements_command))
 
     # Admin
     app.add_handler(CommandHandler("startgame", startgame_command))

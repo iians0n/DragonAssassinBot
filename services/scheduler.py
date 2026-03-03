@@ -108,7 +108,7 @@ async def pending_kill_expiry_job(context: ContextTypes.DEFAULT_TYPE):
     game = get_game_state()
 
     for pk in expired:
-        kill_event_dict, bounty_bonus = confirm_pending_kill(pk.id)
+        kill_event_dict, bounty_bonus, new_achievements = confirm_pending_kill(pk.id)
         if not kill_event_dict:
             continue
 
@@ -117,9 +117,10 @@ async def pending_kill_expiry_job(context: ContextTypes.DEFAULT_TYPE):
         if not killer or not target:
             continue
 
-        # Announce to group
+        # Announce to group (with streak + achievements)
         announcement = format_kill_announcement(
-            killer.to_dict(), target.to_dict(), pk.kill_type, bounty_bonus
+            killer.to_dict(), target.to_dict(), pk.kill_type, bounty_bonus,
+            new_achievements=new_achievements,
         )
         group_id = game.group_chat_id
         if group_id:

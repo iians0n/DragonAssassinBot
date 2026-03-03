@@ -59,7 +59,7 @@ async def kill_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def _handle_accept(query, context, pk):
     """Target accepted the kill."""
-    kill_event_dict, bounty_bonus = confirm_pending_kill(pk.id)
+    kill_event_dict, bounty_bonus, new_achievements = confirm_pending_kill(pk.id)
 
     if not kill_event_dict:
         await query.edit_message_text("❌ Failed to confirm kill. Contact an admin.")
@@ -69,7 +69,7 @@ async def _handle_accept(query, context, pk):
     await query.edit_message_text("✅ You accepted the kill. Cooldown started.")
 
     # Run post-kill flow
-    await _post_kill_flow(context, pk, bounty_bonus)
+    await _post_kill_flow(context, pk, bounty_bonus, new_achievements)
 
 
 async def _handle_dispute(query, context, pk):
@@ -145,7 +145,7 @@ async def resolvekill_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     approved = decision == "approve"
-    kill_event_dict, bounty_bonus, pk = resolve_disputed_kill(
+    kill_event_dict, bounty_bonus, pk, new_achievements = resolve_disputed_kill(
         pending_kill_id, approved, update.effective_user.id
     )
 
@@ -166,7 +166,7 @@ async def resolvekill_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             parse_mode="HTML",
         )
         # Run post-kill flow
-        await _post_kill_flow(context, pk, bounty_bonus)
+        await _post_kill_flow(context, pk, bounty_bonus, new_achievements)
 
         # Notify both players
         try:
@@ -209,7 +209,7 @@ async def resolvekill_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             pass
 
 
-async def _post_kill_flow(context, pk, bounty_bonus):
+async def _post_kill_flow(context, pk, bounty_bonus, new_achievements=None):
     """
     Shared post-kill flow: announce to group and DM target about cooldown.
     Used by accept, auto-confirm, and admin approve.
@@ -222,9 +222,10 @@ async def _post_kill_flow(context, pk, bounty_bonus):
 
     game = get_game_state()
 
-    # Announce to group
+    # Announce to group (with streak + achievements)
     announcement = format_kill_announcement(
-        killer.to_dict(), target.to_dict(), pk.kill_type, bounty_bonus
+        killer.to_dict(), target.to_dict(), pk.kill_type, bounty_bonus,
+        new_achievements=new_achievements,
     )
 
     group_id = game.group_chat_id

@@ -49,10 +49,10 @@ def has_pending_kill_against(target_id: int) -> bool:
     return False
 
 
-def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int]:
+def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int, list]:
     """
     Confirm a pending kill — execute it and update stats.
-    Returns (kill_event_dict, bounty_bonus) or (None, 0) if not found/invalid.
+    Returns (kill_event_dict, bounty_bonus, new_achievements) or (None, 0, []) if not found/invalid.
     """
     pending_kills = store.load_pending_kills()
     target_data = None
@@ -63,7 +63,7 @@ def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int]:
             break
 
     if not target_data or target_data["status"] != "pending":
-        return None, 0
+        return None, 0, []
 
     pk = PendingKill.from_dict(target_data)
 
@@ -75,10 +75,9 @@ def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int]:
         logger.warning(f"Pending kill {pk.id}: killer or target not found")
         target_data["status"] = "rejected"
         store.save_pending_kills(pending_kills)
-        return None, 0
+        return None, 0, []
 
-    # Execute the actual kill via combat service
-    kill_event, bounty_bonus = execute_kill(
+    kill_event, bounty_bonus, new_achievements = execute_kill(
         killer, target, pk.kill_type,
         witness=pk.witness,
         photo_file_id=pk.photo_file_id,
@@ -88,7 +87,7 @@ def confirm_pending_kill(pending_kill_id: str) -> Tuple[Optional[dict], int]:
     target_data["status"] = "confirmed"
     store.save_pending_kills(pending_kills)
 
-    return kill_event.to_dict(), bounty_bonus
+    return kill_event.to_dict(), bounty_bonus, new_achievements
 
 
 def dispute_pending_kill(pending_kill_id: str, reason: str = "") -> Optional[PendingKill]:
@@ -111,17 +110,17 @@ def dispute_pending_kill(pending_kill_id: str, reason: str = "") -> Optional[Pen
 
 
 def resolve_disputed_kill(pending_kill_id: str, approved: bool,
-                          admin_id: int) -> Tuple[Optional[dict], int, Optional[PendingKill]]:
+                          admin_id: int) -> Tuple[Optional[dict], int, Optional[PendingKill], list]:
     """
     Admin resolves a disputed kill.
-    Returns (kill_event_dict, bounty_bonus, pending_kill) — kill_event is None if rejected.
+    Returns (kill_event_dict, bounty_bonus, pending_kill, new_achievements) — kill_event is None if rejected.
     """
     pending_kills = store.load_pending_kills()
 
     for pk_data in pending_kills:
         if pk_data["id"] == pending_kill_id:
             if pk_data["status"] != "disputed":
-                return None, 0, None
+                return None, 0, None, []
 
             pk_data["resolved_by"] = admin_id
 
@@ -133,19 +132,19 @@ def resolve_disputed_kill(pending_kill_id: str, approved: bool,
                 killer = get_player(pk.killer_id)
                 target = get_player(pk.target_id)
                 if not killer or not target:
-                    return None, 0, pk
-                kill_event, bounty_bonus = execute_kill(
+                    return None, 0, pk, []
+                kill_event, bounty_bonus, new_achievements = execute_kill(
                     killer, target, pk.kill_type,
                     witness=pk.witness,
                     photo_file_id=pk.photo_file_id,
                 )
-                return kill_event.to_dict(), bounty_bonus, pk
+                return kill_event.to_dict(), bounty_bonus, pk, new_achievements
             else:
                 pk_data["status"] = "rejected"
                 store.save_pending_kills(pending_kills)
-                return None, 0, PendingKill.from_dict(pk_data)
+                return None, 0, PendingKill.from_dict(pk_data), []
 
-    return None, 0, None
+    return None, 0, None, []
 
 
 def get_expired_pending_kills() -> List[PendingKill]:
