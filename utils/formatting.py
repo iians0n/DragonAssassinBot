@@ -1,6 +1,6 @@
 """Message formatting templates and emoji helpers."""
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 TEAM_EMOJIS = {1: "🔴", 2: "🔵", 3: "🟢", 4: "🟡"}
@@ -36,6 +36,20 @@ def format_player_card(player_data: dict) -> str:
         f"📊 KDA: {kda:.1f}",
         f"🏆 Points: {p['points']}",
     ]
+
+    # Streak info
+    current_streak = p.get("current_streak", 0)
+    best_streak = p.get("best_streak", 0)
+    if best_streak > 0:
+        streak_line = f"🔥 Streak: {current_streak} current"
+        if best_streak > current_streak:
+            streak_line += f" | {best_streak} best"
+        lines.append(streak_line)
+
+    # Achievement count
+    achievements = p.get("achievements", [])
+    if achievements:
+        lines.append(f"🏅 Badges: {len(achievements)} unlocked")
 
     if p.get("cooldown_until", 0) > 0 and p["status"] == "cooldown":
         import time
@@ -114,8 +128,12 @@ def format_team_leaderboard(players: List[dict]) -> str:
     return "\n".join(lines)
 
 
-def format_kill_announcement(killer: dict, target: dict, kill_type: str, bounty_bonus: int = 0) -> str:
+def format_kill_announcement(killer: dict, target: dict, kill_type: str,
+                             bounty_bonus: int = 0,
+                             new_achievements: list = None) -> str:
     """Format kill announcement for group chat."""
+    from models.achievement import STREAK_MILESTONES
+
     killer_name = player_mention(killer["username"], killer["name"])
     target_name = player_mention(target["username"], target["name"])
 
@@ -133,7 +151,42 @@ def format_kill_announcement(killer: dict, target: dict, kill_type: str, bounty_
     if bounty_bonus > 0:
         msg += f"\n💰 Bounty claimed! +{bounty_bonus} bonus points!"
 
+    # Streak announcement
+    streak = killer.get("current_streak", 0)
+    if streak >= 3:
+        # Find the highest matching milestone
+        best_milestone = None
+        for threshold in sorted(STREAK_MILESTONES.keys(), reverse=True):
+            if streak >= threshold:
+                best_milestone = STREAK_MILESTONES[threshold]
+                break
+        if best_milestone:
+            s_emoji, s_text = best_milestone
+            msg += f"\n{s_emoji} <b>{killer_name}</b> is on a <b>{streak} KILL STREAK — {s_text}!</b>"
+
+    # Achievement announcements
+    if new_achievements:
+        for a_emoji, a_name, a_desc in new_achievements:
+            msg += f"\n🏅 <b>{killer_name}</b> unlocked: {a_emoji} <b>{a_name}</b> — {a_desc}"
+
     return msg
+
+
+def format_achievements(achievements: list) -> str:
+    """Format a player's achievements list for /achievements command."""
+    from models.achievement import ACHIEVEMENTS
+
+    if not achievements:
+        return "🏅 No achievements unlocked yet. Get out there and start hunting!"
+
+    lines = ["🏅 <b>ACHIEVEMENTS</b> 🏅", ""]
+    for a_id in achievements:
+        if a_id in ACHIEVEMENTS:
+            emoji, name, desc = ACHIEVEMENTS[a_id]
+            lines.append(f"{emoji} <b>{name}</b> — {desc}")
+
+    lines.append(f"\n<i>{len(achievements)}/{len(ACHIEVEMENTS)} unlocked</i>")
+    return "\n".join(lines)
 
 
 def format_death_dm(killer: dict, kill_type: str, cooldown_hours: float) -> str:

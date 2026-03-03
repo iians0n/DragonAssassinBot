@@ -53,10 +53,13 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
 
 
 def execute_kill(killer: Player, target: Player, kill_type: str,
-                 witness: str = "", photo_file_id: str = "") -> Tuple[KillEvent, int]:
+                 witness: str = "", photo_file_id: str = "") -> Tuple[KillEvent, int, list]:
     """
-    Execute a validated kill. Updates player states and returns (KillEvent, bounty_bonus).
+    Execute a validated kill. Updates player states and returns
+    (KillEvent, bounty_bonus, newly_unlocked_achievements).
     """
+    from services.achievements import check_achievements
+
     now = time.time()
 
     if kill_type == "stealth":
@@ -72,6 +75,14 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
     target.status = "cooldown"
     target.cooldown_until = now + cooldown
     target.deaths += 1
+
+    # Reset target's kill streak
+    target.current_streak = 0
+
+    # Update killer's kill streak
+    killer.current_streak += 1
+    if killer.current_streak > killer.best_streak:
+        killer.best_streak = killer.current_streak
 
     # Check and claim bounties on target
     bounty_bonus = _claim_bounties(target.user_id, killer.user_id)
@@ -99,7 +110,10 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
     kills.append(kill_event.to_dict())
     store.save_kill_log(kills)
 
-    return kill_event, bounty_bonus
+    # Check achievements for killer
+    new_achievements = check_achievements(killer, kill_event, bounty_bonus)
+
+    return kill_event, bounty_bonus, new_achievements
 
 
 def _claim_bounties(target_id: int, killer_id: int) -> int:

@@ -20,6 +20,9 @@ class Player:
     points: int = 0
     bounties_placed: int = 0
     bounties_collected: int = 0
+    current_streak: int = 0
+    best_streak: int = 0
+    achievements: list = field(default_factory=list)
     registered_at: float = field(default_factory=time.time)
 
     @property
@@ -56,4 +59,8 @@ class Player:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Player":
-        return cls(**data)
+        # Filter to only known fields for backward compatibility
+        import dataclasses
+        valid_fields = {f.name for f in dataclasses.fields(cls)}
+        filtered = {k: v for k, v in data.items() if k in valid_fields}
+        return cls(**filtered)
