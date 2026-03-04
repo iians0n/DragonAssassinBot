@@ -162,8 +162,10 @@ _leaderboard_counter = 0
 
 async def leaderboard_update_job(context: ContextTypes.DEFAULT_TYPE):
     """Post leaderboard to group chat on a scheduled interval."""
+    if not is_game_hours():
+        return
+
     global _leaderboard_counter
-    _leaderboard_counter += 1
 
     game = get_game_state()
     if not game.is_active():
@@ -178,6 +180,7 @@ async def leaderboard_update_job(context: ContextTypes.DEFAULT_TYPE):
         rankings = get_individual_rankings()
         if not rankings:
             return
+        _leaderboard_counter += 1
         lb_text = format_leaderboard(rankings)
         team_text = format_team_leaderboard(rankings)
         counter_text = f"\n📡 <i>Update #{_leaderboard_counter}</i>"
