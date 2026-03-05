@@ -23,6 +23,9 @@ class Player:
     current_streak: int = 0
     best_streak: int = 0
     achievements: list = field(default_factory=list)
+    role: str = "normal"          # "normal" | "ninja" | "sniper" | "president"
+    president_used: bool = False  # True after president dies once (becomes normal)
+    bonus_points: int = 0         # Hidden role bonus, applied at day end
     registered_at: float = field(default_factory=time.time)
 
     @property

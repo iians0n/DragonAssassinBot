@@ -30,12 +30,26 @@ def format_player_card(player_data: dict) -> str:
         f"👤 <b>{p['name']}</b>",
         f"{team_label(p['team'])}",
         f"Status: {status_emoji} {p['status'].upper()}",
-        "",
+    ]
+
+    # Show role (only visible in private /profile)
+    role = p.get('role', 'normal')
+    if role != 'normal':
+        from services.roles import get_role_display
+        lines.append(f"Role: {get_role_display(role)}")
+
+    lines.append("")
+    lines.extend([
         f"⚔️ Kills: {kills_total} ({p['kills_normal']} normal, {p['kills_stealth']} stealth)",
         f"💀 Deaths: {p['deaths']}",
         f"📊 KDA: {kda:.1f}",
         f"🏆 Points: {p['points']}",
-    ]
+    ])
+
+    # Show pending hidden bonus points (private only)
+    bonus_pts = p.get("bonus_points", 0)
+    if bonus_pts > 0:
+        lines.append(f"🎁 Pending Bonus: +{bonus_pts} pts (revealed at day end)")
 
     # Streak info
     current_streak = p.get("current_streak", 0)
@@ -133,6 +147,7 @@ def format_kill_announcement(killer: dict, target: dict, kill_type: str,
                              new_achievements: list = None) -> str:
     """Format kill announcement for group chat."""
     from models.achievement import STREAK_MILESTONES
+    from config import POINTS_NORMAL_KILL, POINTS_STEALTH_KILL
 
     killer_name = player_mention(killer["username"], killer["name"])
     target_name = player_mention(target["username"], target["name"])
@@ -140,11 +155,11 @@ def format_kill_announcement(killer: dict, target: dict, kill_type: str,
     if kill_type == "stealth":
         emoji = "🗡️"
         type_text = "stealth-eliminated"
-        pts = "+2 points"
+        pts = f"+{POINTS_STEALTH_KILL} points"
     else:
         emoji = "☠️"
         type_text = "eliminated"
-        pts = "+1 point"
+        pts = f"+{POINTS_NORMAL_KILL} points"
 
     msg = f"{emoji} <b>{killer_name}</b> {type_text} <b>{target_name}</b>! ({pts})"
 

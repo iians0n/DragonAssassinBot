@@ -18,6 +18,7 @@ class GameState:
     group_chat_id: int = 0
     group_topic_id: int = 0             # Forum/topic thread ID (0 = no topic)
     admin_ids: List = field(default_factory=list)
+    team_chat_ids: dict = field(default_factory=dict)  # {"1": chat_id, ...} for team GCs
 
     def is_active(self) -> bool:
         return self.status == "active"

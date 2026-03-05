@@ -84,19 +84,49 @@ async def game_day_warning_job(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def game_day_end_job(context: ContextTypes.DEFAULT_TYPE):
-    """Notify group that game day has ended."""
+    """Notify group that game day has ended, apply role bonuses, and reshuffle roles."""
     game = get_game_state()
     if not game.is_active():
         return
+
+    # 1. Apply daily role bonuses
+    from services.roles import apply_daily_bonuses, assign_all_roles, send_roles_to_team_gc, send_bonus_summary_to_team_gc
+
+    bonus_results = apply_daily_bonuses()
+
+    # 2. Announce day end to main group
     try:
+        bonus_msg = ""
+        if bonus_results:
+            total_bonus = sum(b for _, b, _ in bonus_results)
+            bonus_msg = f"\n\n🎁 <b>Role bonuses applied!</b> ({total_bonus} pts distributed)"
         await send_to_group(
             context.bot,
             "🌙 <b>Game day has ended.</b> See you tomorrow at 9 AM! 😴\n\n"
-            "No kills count outside game hours.",
+            "No kills count outside game hours."
+            f"{bonus_msg}",
             game,
         )
     except Exception as e:
         logger.warning(f"Failed to send day end notification: {e}")
+
+    # 3. Send bonus details to each team GC
+    if bonus_results:
+        for team in range(1, 5):
+            try:
+                await send_bonus_summary_to_team_gc(context.bot, team, bonus_results, game)
+            except Exception as e:
+                logger.warning(f"Failed to send bonus summary to team {team}: {e}")
+
+    # 4. Reshuffle roles for next day
+    role_result = assign_all_roles()
+
+    # 5. Send new roles to team GCs
+    for team, players in role_result.items():
+        try:
+            await send_roles_to_team_gc(context.bot, team, players, game)
+        except Exception as e:
+            logger.warning(f"Failed to send new roles to team {team} GC: {e}")
 
 
 async def pending_kill_expiry_job(context: ContextTypes.DEFAULT_TYPE):
