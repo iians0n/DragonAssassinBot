@@ -12,7 +12,7 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 - **4 teams** compete over 1 week
 - 🏓 **Ball kill** (`/ball`): +10 points, target cooldown 2 hours
 - 🗡️ **Post-it kill** (`/postit`): +5 points, same gender only, 1 hour cooldown
-- 🎯 **Max 2 kills per day**
+- 🎯 ~~**Max 2 kills per day**~~ *(temporarily disabled)*
 - 🎭 **Hidden roles** — each team gets 1 Ninja, 1 Sniper, 1 President (randomly assigned daily)
 - **Game hours:** 9 AM – 11 PM SGT
 - **Most points wins!**
@@ -64,6 +64,18 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 | `/addplayer <@user>` | Manually add a player | DM |
 | `/resetkill <name>` | Revive a player (clear cooldown) | DM |
 | `/resolvekill <id> approve/reject` | Resolve a disputed kill | DM |
+
+---
+
+## ⚖️ Kill Disputes
+
+When a kill is reported, the target receives a DM with **Accept** / **Dispute** buttons.
+
+- **Accept** → Kill is confirmed immediately
+- **Dispute** → Player is prompted to type a short reason, then all admins receive a notification with inline **Approve** / **Reject** buttons
+- **No response** → Kill is auto-confirmed after the dispute window (15 min)
+
+Resolved dispute messages retain the kill time, type, and dispute reason for admin reference.
 
 ---
 
