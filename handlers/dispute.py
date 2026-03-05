@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
 from telegram.ext import ContextTypes
 
 import pytz
@@ -77,16 +77,49 @@ async def _handle_accept(query, context, pk):
 
 
 async def _handle_dispute(query, context, pk):
-    """Target disputed the kill."""
-    disputed_pk = dispute_pending_kill(pk.id)
-
-    if not disputed_pk:
-        await query.edit_message_text("❌ Could not dispute this kill. It may have already been processed.")
-        return
+    """Target clicked dispute — prompt for a reason before processing."""
+    # Store the pending kill ID so we can process it when the reason arrives
+    context.user_data["awaiting_dispute_reason"] = pk.id
 
     # Update the button message
     await query.edit_message_text(
-        "⚠️ You disputed this kill. An admin has been notified and will review it."
+        "⚠️ You're disputing this kill.\n\n"
+        "📝 Please type a short reason for your dispute:"
+    )
+
+    # Send a ForceReply to guide the user to type
+    await context.bot.send_message(
+        chat_id=query.from_user.id,
+        text="✏️ Type your dispute reason below:",
+        reply_markup=ForceReply(selective=True),
+    )
+
+
+async def dispute_reason_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Capture the dispute reason text after the user clicked Dispute."""
+    pending_kill_id = context.user_data.pop("awaiting_dispute_reason", None)
+    if not pending_kill_id:
+        return  # Not awaiting a dispute reason, ignore
+
+    reason = update.message.text.strip()[:200]  # Cap at 200 chars
+    pk = get_pending_kill(pending_kill_id)
+
+    if not pk:
+        await update.message.reply_text("❌ This kill report no longer exists.")
+        return
+
+    if pk.status != "pending":
+        await update.message.reply_text("ℹ️ This kill has already been processed.")
+        return
+
+    disputed_pk = dispute_pending_kill(pk.id, reason=reason)
+
+    if not disputed_pk:
+        await update.message.reply_text("❌ Could not dispute this kill. It may have already been processed.")
+        return
+
+    await update.message.reply_text(
+        "⚠️ Dispute submitted! An admin has been notified and will review it."
     )
 
     # Notify killer
@@ -100,6 +133,7 @@ async def _handle_dispute(query, context, pk):
             chat_id=pk.killer_id,
             text=(
                 f"⚠️ <b>{target_name}</b> disputed your kill!\n"
+                f"📝 Reason: <i>{reason}</i>\n"
                 f"An admin will review and resolve this."
             ),
             parse_mode="HTML",
@@ -122,9 +156,9 @@ async def _handle_dispute(query, context, pk):
         ]
     ])
 
-    # Notify all admins with a friendly message and track sent messages
+    # Notify all admins with dispute reason included
     game = get_game_state()
-    admin_messages = []  # list of (chat_id, message_id)
+    admin_messages = []
     for admin_id in game.admin_ids:
         try:
             msg = await context.bot.send_message(
@@ -135,6 +169,7 @@ async def _handle_dispute(query, context, pk):
                     f"⏰ Kill reported at {kill_time}\n"
                     f"🎯 Type: {pk.kill_type}\n\n"
                     f"<b>{target_name}</b> disputes this kill.\n"
+                    f"📝 Reason: <i>{reason}</i>\n\n"
                     f"Please review and tap a button below:"
                 ),
                 parse_mode="HTML",
@@ -168,7 +203,7 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
     action, pending_kill_id = data.split(":", 1)
     approved = action == "admin_approve"
 
-    kill_event_dict, bounty_bonus, pk = resolve_disputed_kill(
+    kill_event_dict, bounty_bonus, pk, new_achievements = resolve_disputed_kill(
         pending_kill_id, approved, user_id
     )
 
@@ -184,15 +219,27 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
     killer_name = killer.name if killer else "Unknown"
     target_name = target.name if target else "Unknown"
 
+    # Format kill time for the resolved message
+    try:
+        tz = pytz.timezone(TIMEZONE)
+        kill_time = datetime.fromtimestamp(pk.timestamp, tz=tz).strftime("%d %b, %I:%M:%S %p SGT")
+    except Exception:
+        kill_time = "Unknown"
+
+    dispute_reason = pk.disputed_reason or "No reason given"
+
     if approved:
         resolved_text = (
-            f"✅ <b>Kill Approved</b> by {admin_name}\n\n"
+            f"✅ <b>Kill Approved by Admin {admin_name}</b>\n\n"
             f"🗡️ <b>{killer_name}</b> → <b>{target_name}</b>\n"
+            f"⏰ Kill reported at {kill_time}\n"
+            f"🎯 Type: {pk.kill_type}\n"
+            f"📝 Dispute reason: <i>{dispute_reason}</i>\n\n"
             f"Points awarded. Cooldown started for {target_name}."
         )
         await query.edit_message_text(resolved_text, parse_mode="HTML")
         # Run post-kill flow
-        await _post_kill_flow(context, pk, bounty_bonus)
+        await _post_kill_flow(context, pk, bounty_bonus, new_achievements)
 
         # Notify both players
         try:
@@ -213,8 +260,11 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
             pass
     else:
         resolved_text = (
-            f"❌ <b>Kill Rejected</b> by {admin_name}\n\n"
+            f"❌ <b>Kill Rejected by Admin {admin_name}</b>\n\n"
             f"🗡️ <b>{killer_name}</b> → <b>{target_name}</b>\n"
+            f"⏰ Kill reported at {kill_time}\n"
+            f"🎯 Type: {pk.kill_type}\n"
+            f"📝 Dispute reason: <i>{dispute_reason}</i>\n\n"
             f"No points awarded. {target_name} is safe."
         )
         await query.edit_message_text(resolved_text, parse_mode="HTML")
