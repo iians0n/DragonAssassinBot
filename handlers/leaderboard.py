@@ -12,10 +12,12 @@ from utils.formatting import (
     format_player_card,
     team_label,
 )
+from utils.dm_only import dm_only
 
 logger = logging.getLogger(__name__)
 
 
+@dm_only
 async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /leaderboard — show top 10 + team rankings."""
     rankings = get_individual_rankings()
@@ -31,6 +33,7 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     )
 
 
+@dm_only
 async def team_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /team — show your team's stats."""
     player = get_player(update.effective_user.id)
@@ -67,6 +70,7 @@ async def team_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
+@dm_only
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /stats @username — detailed stats for a player."""
     if not context.args:

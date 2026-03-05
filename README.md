@@ -32,6 +32,8 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 
 ## 📋 Commands
 
+> ⚠️ **DM-only:** All player commands and most admin commands must be sent as a **private message** to the bot. Commands sent in group chats will be rejected. Kill announcements, leaderboard updates, and daily notifications are still posted to the group automatically.
+
 ### Player Commands
 
 | Command | Description |
@@ -51,17 +53,17 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 
 ### Admin Commands
 
-| Command | Description |
-|---|---|
-| `/admin <passcode>` | Self-register as admin with passcode |
-| `/startgame` | Begin the game (sets group chat + 7-day timer) |
-| `/endgame` | End the game and post final results |
-| `/pausegame` | Toggle pause/resume |
-| `/assignroles` | Randomly assign roles to all teams |
-| `/setteamgc <1-4>` | Set current chat as a team's group chat |
-| `/addplayer <@user>` | Manually add a player |
-| `/resetkill <name>` | Revive a player (clear cooldown) |
-| `/resolvekill <id> approve/reject` | Resolve a disputed kill |
+| Command | Description | Where |
+|---|---|---|
+| `/admin <passcode>` | Self-register as admin with passcode | Group or DM |
+| `/startgame` | Begin the game (sets group chat + 7-day timer) | **Group** |
+| `/setteamgc <1-4>` | Set current chat as a team's group chat | **Group** |
+| `/endgame` | End the game and post final results | DM |
+| `/pausegame` | Toggle pause/resume | DM |
+| `/assignroles` | Randomly assign roles to all teams | DM |
+| `/addplayer <@user>` | Manually add a player | DM |
+| `/resetkill <name>` | Revive a player (clear cooldown) | DM |
+| `/resolvekill <id> approve/reject` | Resolve a disputed kill | DM |
 
 ---
 

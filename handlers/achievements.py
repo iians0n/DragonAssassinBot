@@ -6,10 +6,12 @@ from telegram.ext import ContextTypes
 
 from services.registration import get_player, find_player_by_identifier
 from utils.formatting import format_achievements
+from utils.dm_only import dm_only
 
 logger = logging.getLogger(__name__)
 
 
+@dm_only
 async def achievements_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /achievements — view your badges or another player's badges."""
     if context.args:
