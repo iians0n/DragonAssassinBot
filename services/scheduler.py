@@ -155,22 +155,31 @@ async def pending_kill_expiry_job(context: ContextTypes.DEFAULT_TYPE):
         group_id = game.group_chat_id
         if group_id:
             try:
-                await send_to_group(context.bot, announcement, game)
+                await send_to_group(context.bot, announcement, game, photo_file_id=pk.photo_file_id)
             except Exception as e:
                 logger.warning(f"Could not post auto-confirmed kill to group: {e}")
 
         # DM target about cooldown
         cooldown_hours = COOLDOWN_STEALTH / 3600 if pk.kill_type == "stealth" else COOLDOWN_BALL / 3600
         try:
-            await context.bot.send_message(
-                chat_id=target.user_id,
-                text=(
-                    f"⏰ Your dispute window expired. The kill by <b>{killer.name}</b> "
-                    f"has been <b>auto-confirmed</b>.\n"
-                    f"💀 Cooldown: {cooldown_hours:.0f} hour(s). You'll respawn automatically."
-                ),
-                parse_mode="HTML",
+            text=(
+                f"⏰ Your dispute window expired. The kill by <b>{killer.name}</b> "
+                f"has been <b>auto-confirmed</b>.\n"
+                f"💀 Cooldown: {cooldown_hours:.0f} hour(s). You'll respawn automatically."
             )
+            if pk.photo_file_id:
+                await context.bot.send_photo(
+                    chat_id=target.user_id,
+                    photo=pk.photo_file_id,
+                    caption=text,
+                    parse_mode="HTML",
+                )
+            else:
+                await context.bot.send_message(
+                    chat_id=target.user_id,
+                    text=text,
+                    parse_mode="HTML",
+                )
         except Exception as e:
             logger.warning(f"Could not DM target about auto-confirm: {e}")
 

@@ -139,18 +139,28 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
     kill_type_text = "🗡️ stealth kill (post-it)" if kill_type == "stealth" else "☠️ normal kill (ball)"
 
     try:
-        await context.bot.send_message(
-            chat_id=target.user_id,
-            text=(
-                f"⚠️ <b>Kill Report</b>\n\n"
-                f"<b>{killer_mention}</b> reported a {kill_type_text} on you!\n\n"
-                f"You have <b>{minutes} minutes</b> to respond.\n"
-                f"If you don't respond, the kill will be <b>auto-confirmed</b>.\n\n"
-                f"Do you accept or dispute this kill?"
-            ),
-            parse_mode="HTML",
-            reply_markup=keyboard,
+        text=(
+            f"⚠️ <b>Kill Report</b>\n\n"
+            f"<b>{killer_mention}</b> reported a {kill_type_text} on you!\n\n"
+            f"You have <b>{minutes} minutes</b> to respond.\n"
+            f"If you don't respond, the kill will be <b>auto-confirmed</b>.\n\n"
+            f"Do you accept or dispute this kill?"
         )
+        if photo_file_id:
+            await context.bot.send_photo(
+                chat_id=target.user_id,
+                photo=photo_file_id,
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+        else:
+            await context.bot.send_message(
+                chat_id=target.user_id,
+                text=text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
     except Exception as e:
         logger.warning(f"Could not DM target {target.user_id}: {e}")
         await update.message.reply_text(

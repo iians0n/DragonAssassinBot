@@ -53,6 +53,50 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @dm_only
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /help command — show list of commands."""
+    from services.game_manager import is_admin
+    user_id = update.effective_user.id
+
+    help_text = (
+        "📖 <b>Command Guide</b> 📖\n\n"
+        "🎮 <b>Gameplay</b>\n"
+        "• /register - Join the game\n"
+        "• /profile - Give your current stats and role\n"
+        "• /ball @target - Report a normal kill (ping pong)\n"
+        "• /postit @target [photo] - Report a stealth kill (post-it)\n"
+        "   <i>(You can attach a photo or reply to one)</i>\n\n"
+        "📊 <b>Stats & Standings</b>\n"
+        "• /leaderboard - Show top 10 players\n"
+        "• /team - Show team standings\n"
+        "• /stats - Global game statistics\n"
+        "• /achievements - View your unlocked badges\n\n"
+        "💰 <b>Bounties</b>\n"
+        "• /bounty @target [pts] - Place a bounty\n"
+        "• /bounties - See all active bounties\n\n"
+        "⏳ <b>Info</b>\n"
+        "• /countdown - Time until next game phase\n"
+        "• /help - Show this message\n"
+    )
+
+    if is_admin(user_id):
+        help_text += (
+            "\n🛠️ <b>Admin Commands</b>\n"
+            "• /admin - Admin control panel\n"
+            "• /startgame - Start the game\n"
+            "• /pausegame - Pause the game\n"
+            "• /endgame - End the game\n"
+            "• /assignroles - Manually reshuffle roles\n"
+            "• /addplayer - Manually add someone to a team\n"
+            "• /resetkill [kill_id] - Delete a kill log\n"
+            "• /resolvekill [kill_id] [approve|reject] - Resolve dispute\n"
+            "• /setteamgc [team] - Link current chat as a team GC\n"
+        )
+
+    await update.message.reply_text(help_text, parse_mode="HTML")
+
+
+@dm_only
 async def register_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Begin registration — ask for name. Triggered by /register or button."""
     user_id = update.effective_user.id

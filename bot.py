@@ -7,7 +7,7 @@ import pytz
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
 from config import BOT_TOKEN, TIMEZONE
-from handlers.start import start_command, profile_command, get_registration_handler
+from handlers.start import start_command, help_command, profile_command, get_registration_handler
 from handlers.kill import ball_command, postit_command, postit_photo_command
 from handlers.leaderboard import leaderboard_command, team_command, stats_command
 from handlers.bounty import bounty_command, bounties_command
@@ -67,6 +67,7 @@ def main():
 
     # Simple commands
     app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("profile", profile_command))
     app.add_handler(CommandHandler("myprofile", profile_command))
 

@@ -21,9 +21,9 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
     if game_status != "active":
         return False, "❌ The game is not currently active."
 
-    # Must be within game hours (disabled for testing)
-    # if not is_game_hours():
-    #     return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
+    # Must be within game hours
+    if not is_game_hours():
+        return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
 
     # Can't kill yourself
     if killer.user_id == target.user_id:
@@ -49,13 +49,13 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
     if kill_type == "stealth" and killer.gender != target.gender:
         return False, "❌ Stealth kills require killer and target to be the same gender."
 
-    # Daily kill limit (TEMPORARILY DISABLED)
-    # from config import DAILY_KILL_LIMIT
-    # from services.game_manager import is_admin
-    # if not is_admin(killer.user_id):
-    #     today_kills = get_daily_kill_count(killer.user_id)
-    #     if today_kills >= DAILY_KILL_LIMIT:
-    #         return False, f"❌ You've used all {DAILY_KILL_LIMIT} kills for today. Resets tomorrow at 9 AM!"
+    # Daily kill limit
+    from config import DAILY_KILL_LIMIT
+    from services.game_manager import is_admin
+    if not is_admin(killer.user_id):
+        today_kills = get_daily_kill_count(killer.user_id)
+        if today_kills >= DAILY_KILL_LIMIT:
+            return False, f"❌ You've used all {DAILY_KILL_LIMIT} kills for today. Resets tomorrow at 9 AM!"
 
     return True, ""
 
