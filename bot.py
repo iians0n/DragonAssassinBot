@@ -13,7 +13,7 @@ from handlers.leaderboard import leaderboard_command, team_command, stats_comman
 from handlers.bounty import bounty_command, bounties_command
 from handlers.countdown import countdown_command
 from handlers.achievements import achievements_command
-from handlers.dispute import kill_callback_handler, admin_resolve_callback_handler, resolvekill_command
+from handlers.dispute import kill_callback_handler, admin_resolve_callback_handler, resolvekill_command, dispute_reason_handler
 from handlers.admin import (
     startgame_command,
     endgame_command,
@@ -58,6 +58,12 @@ def main():
 
     # Registration conversation (must be added before simple command handlers)
     app.add_handler(get_registration_handler())
+
+    # Dispute reason text capture (must be before other MessageHandlers)
+    app.add_handler(MessageHandler(
+        filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE,
+        dispute_reason_handler,
+    ), group=1)
 
     # Simple commands
     app.add_handler(CommandHandler("start", start_command))
