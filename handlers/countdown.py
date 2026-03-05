@@ -7,8 +7,10 @@ from telegram.ext import ContextTypes
 from services.game_manager import get_game_state
 from utils.time_utils import get_sg_now, format_countdown, seconds_until_hour, is_game_hours
 from config import DAY_START_HOUR, DAY_END_HOUR, GAME_DURATION_DAYS
+from utils.dm_only import dm_only
 
 
+@dm_only
 async def countdown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /countdown — show time remaining."""
     game = get_game_state()

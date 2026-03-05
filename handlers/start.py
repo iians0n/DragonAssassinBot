@@ -13,6 +13,7 @@ from telegram.ext import (
 
 from services.registration import register_player, get_player, is_registered
 from utils.formatting import format_player_card, team_label
+from utils.dm_only import dm_only
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ GAME_INTRO = (
 )
 
 
+@dm_only
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command — show game info."""
     if is_registered(update.effective_user.id):
@@ -50,6 +52,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+@dm_only
 async def register_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Begin registration — ask for name. Triggered by /register or button."""
     user_id = update.effective_user.id
@@ -159,6 +162,7 @@ async def register_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
+@dm_only
 async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /profile — show own stats."""
     player = get_player(update.effective_user.id)

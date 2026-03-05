@@ -21,6 +21,7 @@ from utils.formatting import (
     player_mention,
 )
 from config import COOLDOWN_BALL, COOLDOWN_STEALTH, TIMEZONE
+from utils.dm_only import dm_only
 
 logger = logging.getLogger(__name__)
 
@@ -254,6 +255,7 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
     context.bot_data.get("dispute_messages", {}).pop(pending_kill_id, None)
 
 
+@dm_only
 async def resolvekill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /resolvekill <kill_id> approve|reject — admin resolves a disputed kill (text fallback)."""
     if not is_admin(update.effective_user.id):

@@ -9,6 +9,7 @@ from services.game_manager import is_admin, start_game, end_game, toggle_pause, 
 from services.registration import get_player, find_player_by_identifier, save_player, register_player
 from services.leaderboard import get_individual_rankings
 from utils.formatting import format_leaderboard, format_team_leaderboard, send_to_group
+from utils.dm_only import dm_only
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ async def startgame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.warning(f"Could not post to group: {e}")
 
 
+@dm_only
 @admin_check
 async def endgame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /endgame — end the game and post final results."""
@@ -96,6 +98,7 @@ async def endgame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.warning(f"Could not post final results to group: {e}")
 
 
+@dm_only
 @admin_check
 async def pausegame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /pausegame — toggle pause."""
@@ -107,6 +110,7 @@ async def pausegame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+@dm_only
 @admin_check
 async def addplayer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /addplayer @username — manually register a player."""
@@ -139,6 +143,7 @@ async def addplayer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+@dm_only
 @admin_check
 async def resetkill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /resetkill <name or @username> — revive a player."""
@@ -240,6 +245,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.warning(f"Could not DM new admin {user.id}: {e}")
 
 
+@dm_only
 @admin_check
 async def assignroles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /assignroles — randomly assign roles to all teams."""

@@ -9,21 +9,25 @@ from services.combat import validate_kill
 from services.game_manager import get_game_state
 from services.pending_kill import create_pending_kill, has_pending_kill_against
 from utils.formatting import player_mention
+from utils.dm_only import dm_only
 from config import KILL_DISPUTE_WINDOW
 
 logger = logging.getLogger(__name__)
 
 
+@dm_only
 async def ball_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /ball @target — report a normal kill."""
     await _process_kill(update, context, kill_type="normal")
 
 
+@dm_only
 async def postit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /postit @target — report a stealth kill (requires photo)."""
     await _process_kill(update, context, kill_type="stealth")
 
 
+@dm_only
 async def postit_photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle photo messages with /postit caption."""
     # Parse args from caption since this isn't a regular CommandHandler

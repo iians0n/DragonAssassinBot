@@ -10,10 +10,12 @@ from services.bounty import place_bounty, get_active_bounties
 from services.game_manager import get_game_state
 from utils.formatting import team_label, send_to_group
 from utils.time_utils import format_duration
+from utils.dm_only import dm_only
 
 logger = logging.getLogger(__name__)
 
 
+@dm_only
 async def bounty_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /bounty @target [points] — place a bounty."""
     user = update.effective_user
@@ -75,6 +77,7 @@ async def bounty_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.warning(f"Could not post bounty to group: {e}")
 
 
+@dm_only
 async def bounties_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /bounties — list all active bounties (anonymized)."""
     active = get_active_bounties()
