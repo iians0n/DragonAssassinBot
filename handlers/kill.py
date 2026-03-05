@@ -1,4 +1,4 @@
-"""/kill, /stealthkill command handlers — creates pending kills with dispute window."""
+"""/ball, /postit command handlers — creates pending kills with dispute window."""
 
 import logging
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
@@ -14,22 +14,22 @@ from config import KILL_DISPUTE_WINDOW
 logger = logging.getLogger(__name__)
 
 
-async def kill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /kill @target — report a normal kill."""
+async def ball_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /ball @target — report a normal kill."""
     await _process_kill(update, context, kill_type="normal")
 
 
-async def stealthkill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /stealthkill @target — report a stealth kill (requires photo)."""
+async def postit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /postit @target — report a stealth kill (requires photo)."""
     await _process_kill(update, context, kill_type="stealth")
 
 
-async def stealthkill_photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle photo messages with /stealthkill caption."""
+async def postit_photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle photo messages with /postit caption."""
     # Parse args from caption since this isn't a regular CommandHandler
     caption = update.message.caption or ""
     parts = caption.split()
-    # Set context.args manually (skip the /stealthkill part)
+    # Set context.args manually (skip the /postit part)
     context.args = parts[1:] if len(parts) > 1 else []
     await _process_kill(update, context, kill_type="stealth")
 
@@ -48,11 +48,11 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
     if not context.args:
         if kill_type == "stealth":
             await update.message.reply_text(
-                "Usage: /stealthkill <name or @username>\n"
+                "Usage: /postit <name or @username>\n"
                 "📸 Attach a photo or reply to a photo as proof!"
             )
         else:
-            await update.message.reply_text("Usage: /kill <name or @username>")
+            await update.message.reply_text("Usage: /ball <name or @username>")
         return
 
     # Join all args as the identifier (supports multi-word display names)
@@ -75,7 +75,7 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
         else:
             await update.message.reply_text(
                 "❌ Stealth kills require photo proof!\n"
-                "Send /stealthkill @username with a photo attached, "
+                "Send /postit @username with a photo attached, "
                 "or reply to a photo with the command."
             )
             return
@@ -111,11 +111,16 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
     target_mention = player_mention(target.username, target.name)
     killer_mention = player_mention(killer.username, killer.name)
 
-    # Reply to killer
+    # Reply to killer with kills remaining
+    from services.combat import get_kills_remaining
+    kills_left = get_kills_remaining(killer.user_id) - 1  # -1 for this pending kill
+    kills_left_text = f"\n🎯 Kills remaining today: {max(0, kills_left)}"
+
     await update.message.reply_text(
         f"⏳ Kill reported on <b>{target_mention}</b>!\n\n"
         f"Waiting for confirmation ({minutes} min window).\n"
-        f"If {target_mention} does not dispute, the kill will be auto-confirmed.",
+        f"If {target_mention} does not dispute, the kill will be auto-confirmed."
+        f"{kills_left_text}",
         parse_mode="HTML",
     )
 

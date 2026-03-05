@@ -230,9 +230,73 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "• /endgame — End the game\n"
                 "• /pausegame — Pause/resume\n"
                 "• /addplayer — Add players\n"
-                "• /resetkill — Revive players"
+                "• /resetkill — Revive players\n"
+                "• /assignroles — Assign random roles\n"
+                "• /setteamgc — Set team group chat"
             ),
             parse_mode="HTML",
         )
     except Exception as e:
         logger.warning(f"Could not DM new admin {user.id}: {e}")
+
+
+@admin_check
+async def assignroles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /assignroles — randomly assign roles to all teams."""
+    from services.roles import assign_all_roles, send_roles_to_team_gc
+
+    result = assign_all_roles()
+
+    game = get_game_state()
+
+    lines = ["🎭 <b>Roles assigned!</b>\n"]
+    for team, players in result.items():
+        team_line = f"Team {team}: "
+        role_parts = []
+        for p in players:
+            from services.roles import get_role_display
+            role_parts.append(f"{p.name} ({get_role_display(p.role)})")
+        team_line += ", ".join(role_parts) if role_parts else "No players"
+        lines.append(team_line)
+
+    # Reply to admin with full overview
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+
+    # Send roles to each team's GC
+    for team, players in result.items():
+        await send_roles_to_team_gc(context.bot, team, players, game)
+
+    await update.message.reply_text("✅ Role announcements sent to team group chats.")
+
+
+@admin_check
+async def setteamgc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /setteamgc <team> — set current chat as a team's GC."""
+    if not context.args or len(context.args) < 1:
+        await update.message.reply_text("Usage: /setteamgc <team number 1-4>")
+        return
+
+    try:
+        team = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Team must be a number (1-4).")
+        return
+
+    if team not in (1, 2, 3, 4):
+        await update.message.reply_text("❌ Team must be 1-4.")
+        return
+
+    chat_id = update.effective_chat.id
+
+    from services.game_manager import save_game_state
+    game = get_game_state()
+    game.team_chat_ids[str(team)] = chat_id
+    save_game_state(game)
+
+    from utils.formatting import team_label
+    await update.message.reply_text(
+        f"✅ This chat is now set as <b>{team_label(team)}</b>'s group chat.\n"
+        f"Role announcements will be sent here.",
+        parse_mode="HTML",
+    )
+

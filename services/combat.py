@@ -49,7 +49,38 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
     if kill_type == "stealth" and killer.gender != target.gender:
         return False, "❌ Stealth kills require killer and target to be the same gender."
 
+    # Daily kill limit
+    from config import DAILY_KILL_LIMIT
+    today_kills = get_daily_kill_count(killer.user_id)
+    if today_kills >= DAILY_KILL_LIMIT:
+        return False, f"❌ You've used all {DAILY_KILL_LIMIT} kills for today. Resets tomorrow at 9 AM!"
+
     return True, ""
+
+
+def get_daily_kill_count(user_id: int) -> int:
+    """Count how many kills a player has made today (SGT)."""
+    from datetime import datetime
+    import pytz
+    from config import TIMEZONE
+
+    tz = pytz.timezone(TIMEZONE)
+    now = datetime.now(tz)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start_ts = today_start.timestamp()
+
+    kills = store.load_kill_log()
+    count = 0
+    for kill in kills:
+        if kill.get("killer_id") == user_id and kill.get("timestamp", 0) >= today_start_ts:
+            count += 1
+    return count
+
+
+def get_kills_remaining(user_id: int) -> int:
+    """Get how many kills a player has left today."""
+    from config import DAILY_KILL_LIMIT
+    return max(0, DAILY_KILL_LIMIT - get_daily_kill_count(user_id))
 
 
 def execute_kill(killer: Player, target: Player, kill_type: str,
@@ -61,6 +92,7 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
     If original_timestamp is provided, it is used as the kill time in the log.
     """
     from services.achievements import check_achievements
+    from config import ROLE_PRESIDENT, ROLE_NORMAL
 
     now = time.time()
 
@@ -73,10 +105,18 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
         points = POINTS_NORMAL_KILL
         killer.kills_normal += 1
 
+    # Check if target is president (before updating status)
+    target_was_president = (target.role == ROLE_PRESIDENT and not target.president_used)
+
     # Update target
     target.status = "cooldown"
     target.cooldown_until = now + cooldown
     target.deaths += 1
+
+    # If target was president, downgrade to normal after first death
+    if target_was_president:
+        target.president_used = True
+        target.role = ROLE_NORMAL
 
     # Reset target's kill streak
     target.current_streak = 0
@@ -89,9 +129,21 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
     # Check and claim bounties on target
     bounty_bonus = _claim_bounties(target.user_id, killer.user_id)
 
-    # Update killer points
+    # Update killer points (base points only — role bonuses hidden until EOD)
     total_points = points + bounty_bonus
     killer.points += total_points
+
+    # Accumulate hidden role bonus points (revealed at day end)
+    from config import ROLE_NINJA, ROLE_SNIPER, POINTS_PRESIDENT_KILL
+    bonus = 0
+    if killer.role == ROLE_NINJA and kill_type == "stealth":
+        bonus += POINTS_STEALTH_KILL  # x2 means +base again
+    if killer.role == ROLE_SNIPER and kill_type == "normal":
+        bonus += POINTS_NORMAL_KILL   # x2 means +base again
+    if target_was_president:
+        bonus += POINTS_PRESIDENT_KILL
+    if bonus > 0:
+        killer.bonus_points += bonus
 
     # Save both players
     save_player(killer)
@@ -107,6 +159,7 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
         points_awarded=total_points,
         bounty_claimed=bounty_bonus,
         timestamp=original_timestamp,
+        target_was_president=target_was_president,
     )
 
     kills = store.load_kill_log()

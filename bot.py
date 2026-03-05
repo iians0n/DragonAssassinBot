@@ -8,7 +8,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 
 from config import BOT_TOKEN, TIMEZONE
 from handlers.start import start_command, profile_command, get_registration_handler
-from handlers.kill import kill_command, stealthkill_command, stealthkill_photo_command
+from handlers.kill import ball_command, postit_command, postit_photo_command
 from handlers.leaderboard import leaderboard_command, team_command, stats_command
 from handlers.bounty import bounty_command, bounties_command
 from handlers.countdown import countdown_command
@@ -21,6 +21,8 @@ from handlers.admin import (
     addplayer_command,
     resetkill_command,
     admin_command,
+    assignroles_command,
+    setteamgc_command,
 )
 from services.scheduler import (
     cooldown_check_job,
@@ -63,12 +65,14 @@ def main():
     app.add_handler(CommandHandler("myprofile", profile_command))
 
     # Kill commands
-    app.add_handler(CommandHandler("kill", kill_command))
-    app.add_handler(CommandHandler("stealthkill", stealthkill_command))
-    # Also handle photos with /stealthkill as caption
+    app.add_handler(CommandHandler("ball", ball_command))
+    app.add_handler(CommandHandler("kill", ball_command))  # Alias for backward compat
+    app.add_handler(CommandHandler("postit", postit_command))
+    app.add_handler(CommandHandler("stealthkill", postit_command))  # Alias
+    # Also handle photos with /postit as caption
     app.add_handler(MessageHandler(
-        filters.PHOTO & filters.CaptionRegex(r"^/stealthkill"),
-        stealthkill_photo_command,
+        filters.PHOTO & filters.CaptionRegex(r"^/postit"),
+        postit_photo_command,
     ))
 
     # Leaderboard
@@ -95,6 +99,8 @@ def main():
     app.add_handler(CommandHandler("resetkill", resetkill_command))
     app.add_handler(CommandHandler("resolvekill", resolvekill_command))
     app.add_handler(CommandHandler("admin", admin_command))
+    app.add_handler(CommandHandler("assignroles", assignroles_command))
+    app.add_handler(CommandHandler("setteamgc", setteamgc_command))
 
     # Kill dispute callbacks (Accept / Dispute inline buttons)
     app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))
@@ -113,8 +119,8 @@ def main():
     # Pending kill auto-confirm — every 60 seconds
     job_queue.run_repeating(pending_kill_expiry_job, interval=60, first=15)
 
-    # Leaderboard update — every 30 minutes
-    job_queue.run_repeating(leaderboard_update_job, interval=1800, first=60)
+    # Leaderboard update — every 3 hours
+    job_queue.run_repeating(leaderboard_update_job, interval=10800, first=60)
 
     # Daily notifications (SGT)
     job_queue.run_daily(game_day_start_job, time=dt_time(hour=9, minute=0, tzinfo=tz))

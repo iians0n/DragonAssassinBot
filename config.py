@@ -28,12 +28,24 @@ MIN_BOUNTY = 1
 # Kill dispute window (seconds)
 KILL_DISPUTE_WINDOW = 900  # 15 minutes
 
+# Daily kill limit
+DAILY_KILL_LIMIT = 2  # Max kills per player per day
+
 # Rate limiting
 MAX_COMMANDS_PER_MINUTE = 10
 
 # Points
-POINTS_NORMAL_KILL = 1
-POINTS_STEALTH_KILL = 2
+POINTS_NORMAL_KILL = 10
+POINTS_STEALTH_KILL = 5
+POINTS_PRESIDENT_KILL = 50  # Bonus for killing a president (applied at day end)
+
+# Roles
+ROLE_NORMAL = "normal"
+ROLE_NINJA = "ninja"
+ROLE_SNIPER = "sniper"
+ROLE_PRESIDENT = "president"
+NINJA_STEALTH_MULTIPLIER = 2   # Ninja gets x2 on stealth kills
+SNIPER_NORMAL_MULTIPLIER = 2   # Sniper gets x2 on normal kills
 
 # Data paths
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")

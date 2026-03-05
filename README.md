@@ -1,6 +1,6 @@
 # 🎯 DragonAssassinBot
 
-A Telegram bot for running a week-long campus Assassins game with real-time kill tracking, KDA leaderboards, bounties, kill streaks, and achievements.
+A Telegram bot for running a week-long campus Assassins game with real-time kill tracking, hidden roles, KDA leaderboards, bounties, kill streaks, and achievements.
 
 **Platform:** Telegram  
 **Target Users:** NUS college activity participants (4 teams, ~20–50 players)
@@ -10,10 +10,23 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 ## 🎮 Game Rules
 
 - **4 teams** compete over 1 week
-- **Normal kill** (ball throw): +1 point, target cooldown 2 hours
-- **Stealth kill** (post-it + photo): +2 points, same gender only, 1 hour cooldown
+- 🏓 **Ball kill** (`/ball`): +10 points, target cooldown 2 hours
+- 🗡️ **Post-it kill** (`/postit`): +5 points, same gender only, 1 hour cooldown
+- 🎯 **Max 2 kills per day**
+- 🎭 **Hidden roles** — each team gets 1 Ninja, 1 Sniper, 1 President (randomly assigned daily)
 - **Game hours:** 9 AM – 11 PM SGT
 - **Most points wins!**
+
+### 🎭 Roles (Hidden)
+
+Roles are secret — only your team's GC knows. Bonus points are applied at **end of day** so other teams can't deduce roles from the leaderboard.
+
+| Role | Bonus |
+|---|---|
+| 🥷 Ninja | x2 points on post-it kills (+5 bonus) |
+| 🎯 Sniper | x2 points on ball kills (+10 bonus) |
+| 👑 President | Worth 50 pts to killer. Becomes Normal after dying once |
+| 👤 Normal | No special bonus |
 
 ---
 
@@ -25,9 +38,9 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 |---|---|
 | `/start` | Show game info and register button |
 | `/register` | Sign up — enter name, gender, team |
-| `/profile` | View your stats, streak, and badges |
-| `/kill <name>` | Report a normal kill (ball throw) |
-| `/stealthkill <name>` | Report a stealth kill (post-it + photo required) |
+| `/profile` | View your stats, role, streak, and badges |
+| `/ball <name>` | Report a ball kill (ping pong throw) |
+| `/postit <name>` | Report a post-it kill (requires photo proof) |
 | `/leaderboard` | View top 10 players + team rankings |
 | `/team` | View your team's stats and members |
 | `/stats <name>` | View detailed stats for any player |
@@ -35,7 +48,6 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 | `/bounties` | View all active bounties |
 | `/countdown` | Time remaining in the game |
 | `/achievements` | View your unlocked badges |
-| `/badges` | Alias for `/achievements` |
 
 ### Admin Commands
 
@@ -45,9 +57,23 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 | `/startgame` | Begin the game (sets group chat + 7-day timer) |
 | `/endgame` | End the game and post final results |
 | `/pausegame` | Toggle pause/resume |
+| `/assignroles` | Randomly assign roles to all teams |
+| `/setteamgc <1-4>` | Set current chat as a team's group chat |
 | `/addplayer <@user>` | Manually add a player |
 | `/resetkill <name>` | Revive a player (clear cooldown) |
 | `/resolvekill <id> approve/reject` | Resolve a disputed kill |
+
+---
+
+## ⏰ Daily Schedule (SGT)
+
+| Time | Event |
+|---|---|
+| 9:00 AM | 🎯 Game day starts |
+| 9 AM – 11 PM | Kills award base points (10/5). Role bonuses accumulate silently |
+| Every 3 hours | 📊 Leaderboard posted to group |
+| 10:00 PM | ⚠️ "1 hour warning" |
+| 11:00 PM | 🌙 Day ends → bonuses applied → roles reshuffled → new roles sent to team GCs |
 
 ---
 
