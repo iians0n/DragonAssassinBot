@@ -39,7 +39,10 @@ async def kill_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
     pk = get_pending_kill(pending_kill_id)
 
     if not pk:
-        await query.edit_message_text("❌ This kill report no longer exists.")
+        if query.message.photo:
+            await query.edit_message_caption("❌ This kill report no longer exists.")
+        else:
+            await query.edit_message_text("❌ This kill report no longer exists.")
         return
 
     user_id = query.from_user.id
@@ -52,7 +55,10 @@ async def kill_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
     if pk.status != "pending":
         status_text = {"confirmed": "already confirmed", "disputed": "already disputed",
                        "rejected": "already rejected"}.get(pk.status, pk.status)
-        await query.edit_message_text(f"ℹ️ This kill has been {status_text}.")
+        if query.message.photo:
+            await query.edit_message_caption(f"ℹ️ This kill has been {status_text}.")
+        else:
+            await query.edit_message_text(f"ℹ️ This kill has been {status_text}.")
         return
 
     if action == "kill_accept":
@@ -66,11 +72,17 @@ async def _handle_accept(query, context, pk):
     kill_event_dict, bounty_bonus, new_achievements = confirm_pending_kill(pk.id)
 
     if not kill_event_dict:
-        await query.edit_message_text("❌ Failed to confirm kill. Contact an admin.")
+        if query.message.photo:
+            await query.edit_message_caption("❌ Failed to confirm kill. Contact an admin.")
+        else:
+            await query.edit_message_text("❌ Failed to confirm kill. Contact an admin.")
         return
 
     # Update the button message
-    await query.edit_message_text("✅ You accepted the kill. Cooldown started.")
+    if query.message.photo:
+        await query.edit_message_caption("✅ You accepted the kill. Cooldown started.")
+    else:
+        await query.edit_message_text("✅ You accepted the kill. Cooldown started.")
 
     # Run post-kill flow
     await _post_kill_flow(context, pk, bounty_bonus, new_achievements)
@@ -82,10 +94,14 @@ async def _handle_dispute(query, context, pk):
     context.user_data["awaiting_dispute_reason"] = pk.id
 
     # Update the button message
-    await query.edit_message_text(
+    text = (
         "⚠️ You're disputing this kill.\n\n"
         "📝 Please type a short reason for your dispute:"
     )
+    if query.message.photo:
+        await query.edit_message_caption(text)
+    else:
+        await query.edit_message_text(text)
 
     # Send a ForceReply to guide the user to type
     await context.bot.send_message(
@@ -161,20 +177,30 @@ async def dispute_reason_handler(update: Update, context: ContextTypes.DEFAULT_T
     admin_messages = []
     for admin_id in game.admin_ids:
         try:
-            msg = await context.bot.send_message(
-                chat_id=admin_id,
-                text=(
-                    f"🔔 <b>Kill Dispute — Needs Your Review</b>\n\n"
-                    f"🗡️ <b>{killer_name}</b> claims to have killed <b>{target_name}</b>\n"
-                    f"⏰ Kill reported at {kill_time}\n"
-                    f"🎯 Type: {pk.kill_type}\n\n"
-                    f"<b>{target_name}</b> disputes this kill.\n"
-                    f"📝 Reason: <i>{reason}</i>\n\n"
-                    f"Please review and tap a button below:"
-                ),
-                parse_mode="HTML",
-                reply_markup=buttons,
+            text=(
+                f"🔔 <b>Kill Dispute — Needs Your Review</b>\n\n"
+                f"🗡️ <b>{killer_name}</b> claims to have killed <b>{target_name}</b>\n"
+                f"⏰ Kill reported at {kill_time}\n"
+                f"🎯 Type: {pk.kill_type}\n\n"
+                f"<b>{target_name}</b> disputes this kill.\n"
+                f"📝 Reason: <i>{reason}</i>\n\n"
+                f"Please review and tap a button below:"
             )
+            if pk.photo_file_id:
+                msg = await context.bot.send_photo(
+                    chat_id=admin_id,
+                    photo=pk.photo_file_id,
+                    caption=text,
+                    parse_mode="HTML",
+                    reply_markup=buttons,
+                )
+            else:
+                msg = await context.bot.send_message(
+                    chat_id=admin_id,
+                    text=text,
+                    parse_mode="HTML",
+                    reply_markup=buttons,
+                )
             admin_messages.append((admin_id, msg.message_id))
         except Exception as e:
             logger.warning(f"Could not notify admin {admin_id} about dispute: {e}")
@@ -208,7 +234,10 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
     )
 
     if pk is None:
-        await query.edit_message_text("❌ Kill not found or not in disputed status.")
+        if query.message.photo:
+            await query.edit_message_caption("❌ Kill not found or not in disputed status.")
+        else:
+            await query.edit_message_text("❌ Kill not found or not in disputed status.")
         return
 
     # Get the name of the admin who resolved
@@ -237,7 +266,10 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
             f"📝 Dispute reason: <i>{dispute_reason}</i>\n\n"
             f"Points awarded. Cooldown started for {target_name}."
         )
-        await query.edit_message_text(resolved_text, parse_mode="HTML")
+        if query.message.photo:
+            await query.edit_message_caption(resolved_text, parse_mode="HTML")
+        else:
+            await query.edit_message_text(resolved_text, parse_mode="HTML")
         # Run post-kill flow
         await _post_kill_flow(context, pk, bounty_bonus, new_achievements)
 
@@ -267,7 +299,10 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
             f"📝 Dispute reason: <i>{dispute_reason}</i>\n\n"
             f"No points awarded. {target_name} is safe."
         )
-        await query.edit_message_text(resolved_text, parse_mode="HTML")
+        if query.message.photo:
+            await query.edit_message_caption(resolved_text, parse_mode="HTML")
+        else:
+            await query.edit_message_text(resolved_text, parse_mode="HTML")
         # Notify both players
         try:
             await context.bot.send_message(
@@ -292,12 +327,20 @@ async def admin_resolve_callback_handler(update: Update, context: ContextTypes.D
         if chat_id == user_id:
             continue  # already edited via query.edit_message_text
         try:
-            await context.bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=msg_id,
-                text=resolved_text,
-                parse_mode="HTML",
-            )
+            if pk.photo_file_id:
+                await context.bot.edit_message_caption(
+                    chat_id=chat_id,
+                    message_id=msg_id,
+                    caption=resolved_text,
+                    parse_mode="HTML",
+                )
+            else:
+                await context.bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=msg_id,
+                    text=resolved_text,
+                    parse_mode="HTML",
+                )
         except Exception as e:
             logger.warning(f"Could not update admin {chat_id}'s dispute message: {e}")
 
@@ -410,20 +453,29 @@ async def _post_kill_flow(context, pk, bounty_bonus, new_achievements=None):
     group_id = game.group_chat_id
     if group_id:
         try:
-            await send_to_group(context.bot, announcement, game)
+            await send_to_group(context.bot, announcement, game, photo_file_id=pk.photo_file_id)
         except Exception as e:
             logger.warning(f"Could not post kill announcement to group: {e}")
 
     # DM target about cooldown
     cooldown_hours = COOLDOWN_STEALTH / 3600 if pk.kill_type == "stealth" else COOLDOWN_BALL / 3600
     try:
-        await context.bot.send_message(
-            chat_id=target.user_id,
-            text=(
-                f"💀 Kill confirmed. You are now in cooldown for {cooldown_hours:.0f} hour(s).\n"
-                f"You'll respawn automatically."
-            ),
-            parse_mode="HTML",
+        text=(
+            f"💀 Kill confirmed. You are now in cooldown for {cooldown_hours:.0f} hour(s).\n"
+            f"You'll respawn automatically."
         )
+        if pk.photo_file_id:
+            await context.bot.send_photo(
+                chat_id=target.user_id,
+                photo=pk.photo_file_id,
+                caption=text,
+                parse_mode="HTML",
+            )
+        else:
+            await context.bot.send_message(
+                chat_id=target.user_id,
+                text=text,
+                parse_mode="HTML",
+            )
     except Exception as e:
         logger.warning(f"Could not DM target {target.user_id}: {e}")

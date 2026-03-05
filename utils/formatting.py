@@ -219,7 +219,7 @@ def format_death_dm(killer: dict, kill_type: str, cooldown_hours: float) -> str:
     )
 
 
-async def send_to_group(bot, text: str, game_state=None, parse_mode: str = "HTML"):
+async def send_to_group(bot, text: str, game_state=None, parse_mode: str = "HTML", photo_file_id: str = None):
     """Send a message to the group chat, respecting forum topic if set."""
     if game_state is None:
         from services.game_manager import get_game_state
@@ -231,12 +231,17 @@ async def send_to_group(bot, text: str, game_state=None, parse_mode: str = "HTML
 
     kwargs = {
         "chat_id": group_id,
-        "text": text,
         "parse_mode": parse_mode,
     }
     topic_id = getattr(game_state, "group_topic_id", 0)
     if topic_id:
         kwargs["message_thread_id"] = topic_id
 
-    await bot.send_message(**kwargs)
+    if photo_file_id:
+        kwargs["caption"] = text
+        kwargs["photo"] = photo_file_id
+        await bot.send_photo(**kwargs)
+    else:
+        kwargs["text"] = text
+        await bot.send_message(**kwargs)
 
