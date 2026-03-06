@@ -23,6 +23,10 @@ from handlers.admin import (
     admin_command,
     assignroles_command,
     setteamgc_command,
+    setpoints_command,
+    addpoints_command,
+    setrole_command,
+    viewroles_command,
 )
 from services.scheduler import (
     cooldown_check_job,
@@ -108,6 +112,10 @@ def main():
     app.add_handler(CommandHandler("admin", admin_command))
     app.add_handler(CommandHandler("assignroles", assignroles_command))
     app.add_handler(CommandHandler("setteamgc", setteamgc_command))
+    app.add_handler(CommandHandler("setpoints", setpoints_command))
+    app.add_handler(CommandHandler("addpoints", addpoints_command))
+    app.add_handler(CommandHandler("setrole", setrole_command))
+    app.add_handler(CommandHandler("viewroles", viewroles_command))
 
     # Kill dispute callbacks (Accept / Dispute inline buttons)
     app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))
