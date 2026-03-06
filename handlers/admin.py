@@ -297,6 +297,13 @@ async def setteamgc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from services.game_manager import save_game_state
     game = get_game_state()
     game.team_chat_ids[str(team)] = chat_id
+    
+    # Save topic/thread ID if used in a forum topic
+    if update.message.message_thread_id:
+        game.team_topic_ids[str(team)] = update.message.message_thread_id
+    elif str(team) in getattr(game, 'team_topic_ids', {}):
+        game.team_topic_ids.pop(str(team), None)
+        
     save_game_state(game)
 
     from utils.formatting import team_label

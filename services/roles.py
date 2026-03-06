@@ -149,11 +149,16 @@ async def send_roles_to_team_gc(bot, team: int, players: List[Player], game_stat
     lines.append("<i>🤫 Keep your roles secret from other teams!</i>")
 
     try:
-        await bot.send_message(
-            chat_id=team_chat_id,
-            text="\n".join(lines),
-            parse_mode="HTML",
-        )
+        kwargs = {
+            "chat_id": team_chat_id,
+            "text": "\n".join(lines),
+            "parse_mode": "HTML",
+        }
+        topic_id = getattr(game_state, "team_topic_ids", {}).get(str(team))
+        if topic_id:
+            kwargs["message_thread_id"] = topic_id
+            
+        await bot.send_message(**kwargs)
     except Exception as e:
         logger.warning(f"Could not send roles to team {team} GC: {e}")
 
@@ -176,10 +181,15 @@ async def send_bonus_summary_to_team_gc(bot, team: int, results: List[Tuple[str,
         lines.append(f"  <b>{name}</b>: +{bonus} pts ({reason})")
 
     try:
-        await bot.send_message(
-            chat_id=team_chat_id,
-            text="\n".join(lines),
-            parse_mode="HTML",
-        )
+        kwargs = {
+            "chat_id": team_chat_id,
+            "text": "\n".join(lines),
+            "parse_mode": "HTML",
+        }
+        topic_id = getattr(game_state, "team_topic_ids", {}).get(str(team))
+        if topic_id:
+            kwargs["message_thread_id"] = topic_id
+            
+        await bot.send_message(**kwargs)
     except Exception as e:
         logger.warning(f"Could not send bonus summary to team {team} GC: {e}")
