@@ -306,3 +306,133 @@ async def setteamgc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML",
     )
 
+
+@admin_check
+async def setpoints_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /setpoints <player> <amount> — set a player's points to an exact value."""
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text("Usage: /setpoints <name or @username> <amount>")
+        return
+
+    try:
+        amount = int(context.args[-1])
+    except ValueError:
+        await update.message.reply_text("❌ Amount must be a number.")
+        return
+
+    identifier = " ".join(context.args[:-1])
+    player = find_player_by_identifier(identifier)
+    if not player:
+        await update.message.reply_text(f"❌ Player '{identifier}' not found.")
+        return
+
+    old_points = player.points
+    player.points = amount
+    save_player(player)
+
+    await update.message.reply_text(
+        f"✅ <b>{player.name}</b> points: {old_points} → <b>{amount}</b>",
+        parse_mode="HTML",
+    )
+
+
+@admin_check
+async def addpoints_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /addpoints <player> <amount> — add/subtract points (supports negative)."""
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text("Usage: /addpoints <name or @username> <amount>\nUse negative for subtraction: /addpoints @alice -10")
+        return
+
+    try:
+        amount = int(context.args[-1])
+    except ValueError:
+        await update.message.reply_text("❌ Amount must be a number.")
+        return
+
+    identifier = " ".join(context.args[:-1])
+    player = find_player_by_identifier(identifier)
+    if not player:
+        await update.message.reply_text(f"❌ Player '{identifier}' not found.")
+        return
+
+    old_points = player.points
+    player.points += amount
+    save_player(player)
+
+    sign = "+" if amount >= 0 else ""
+    await update.message.reply_text(
+        f"✅ <b>{player.name}</b> points: {old_points} → <b>{player.points}</b> ({sign}{amount})",
+        parse_mode="HTML",
+    )
+
+
+@admin_check
+async def setrole_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /setrole <player> <role> — manually assign a role."""
+    from config import ROLE_NORMAL, ROLE_NINJA, ROLE_SNIPER, ROLE_PRESIDENT
+
+    valid_roles = {
+        "normal": ROLE_NORMAL,
+        "ninja": ROLE_NINJA,
+        "sniper": ROLE_SNIPER,
+        "president": ROLE_PRESIDENT,
+    }
+
+    if not context.args or len(context.args) < 2:
+        roles_list = ", ".join(valid_roles.keys())
+        await update.message.reply_text(f"Usage: /setrole <name or @username> <role>\nValid roles: {roles_list}")
+        return
+
+    role_input = context.args[-1].lower()
+    if role_input not in valid_roles:
+        roles_list = ", ".join(valid_roles.keys())
+        await update.message.reply_text(f"❌ Invalid role. Valid roles: {roles_list}")
+        return
+
+    identifier = " ".join(context.args[:-1])
+    player = find_player_by_identifier(identifier)
+    if not player:
+        await update.message.reply_text(f"❌ Player '{identifier}' not found.")
+        return
+
+    old_role = player.role
+    player.role = valid_roles[role_input]
+
+    # Reset president_used if assigning president
+    if player.role == ROLE_PRESIDENT:
+        player.president_used = False
+
+    save_player(player)
+
+    from services.roles import get_role_display
+    await update.message.reply_text(
+        f"✅ <b>{player.name}</b> role: {get_role_display(old_role)} → <b>{get_role_display(player.role)}</b>",
+        parse_mode="HTML",
+    )
+
+
+@admin_check
+async def viewroles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /viewroles — show all players and their roles (admin eyes only)."""
+    from services.registration import get_team_players
+    from services.roles import get_role_display
+    from utils.formatting import team_label
+
+    lines = ["🔍 <b>All Player Roles</b>", ""]
+
+    for team in range(1, 5):
+        players = get_team_players(team)
+        if not players:
+            continue
+
+        lines.append(f"<b>{team_label(team)}</b>")
+        for p in sorted(players, key=lambda x: x.role):
+            lines.append(f"  {get_role_display(p.role)} — {p.name} ({p.points} pts)")
+        lines.append("")
+
+    if len(lines) <= 2:
+        await update.message.reply_text("📊 No players registered yet.")
+        return
+
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+
