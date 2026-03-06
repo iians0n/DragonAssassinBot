@@ -10,7 +10,7 @@ from config import BOT_TOKEN, TIMEZONE
 from handlers.start import start_command, help_command, profile_command, get_registration_handler
 from handlers.kill import ball_command, postit_command, postit_photo_command
 from handlers.leaderboard import leaderboard_command, team_command, stats_command
-from handlers.bounty import bounty_command, bounties_command
+# from handlers.bounty import bounty_command, bounties_command  # Bounty disabled
 from handlers.countdown import countdown_command
 from handlers.achievements import achievements_command
 from handlers.dispute import kill_callback_handler, admin_resolve_callback_handler, resolvekill_command, dispute_reason_handler
@@ -26,7 +26,7 @@ from handlers.admin import (
 )
 from services.scheduler import (
     cooldown_check_job,
-    bounty_expiry_job,
+    # bounty_expiry_job,  # Bounty disabled
     pending_kill_expiry_job,
     leaderboard_update_job,
     game_day_start_job,
@@ -87,9 +87,9 @@ def main():
     app.add_handler(CommandHandler("team", team_command))
     app.add_handler(CommandHandler("stats", stats_command))
 
-    # Bounty
-    app.add_handler(CommandHandler("bounty", bounty_command))
-    app.add_handler(CommandHandler("bounties", bounties_command))
+    # Bounty (disabled)
+    # app.add_handler(CommandHandler("bounty", bounty_command))
+    # app.add_handler(CommandHandler("bounties", bounties_command))
 
     # Countdown
     app.add_handler(CommandHandler("countdown", countdown_command))
@@ -120,8 +120,8 @@ def main():
     # Cooldown check — every 60 seconds
     job_queue.run_repeating(cooldown_check_job, interval=60, first=10)
 
-    # Bounty expiry check — every 5 minutes
-    job_queue.run_repeating(bounty_expiry_job, interval=300, first=30)
+    # Bounty expiry check (disabled)
+    # job_queue.run_repeating(bounty_expiry_job, interval=300, first=30)
 
     # Pending kill auto-confirm — every 60 seconds
     job_queue.run_repeating(pending_kill_expiry_job, interval=60, first=15)
