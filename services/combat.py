@@ -5,7 +5,7 @@ from typing import Tuple, List
 
 from models.player import Player
 from models.kill import KillEvent
-from models.bounty import Bounty
+# from models.bounty import Bounty  # Bounty disabled
 from storage.json_store import store
 from services.registration import get_player, save_player
 from utils.time_utils import is_game_hours
@@ -128,8 +128,9 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
     if killer.current_streak > killer.best_streak:
         killer.best_streak = killer.current_streak
 
-    # Check and claim bounties on target
-    bounty_bonus = _claim_bounties(target.user_id, killer.user_id)
+    # Bounty system disabled
+    # bounty_bonus = _claim_bounties(target.user_id, killer.user_id)
+    bounty_bonus = 0
 
     # Update killer points (base points only — role bonuses hidden until EOD)
     total_points = points + bounty_bonus
@@ -174,28 +175,27 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
     return kill_event, bounty_bonus, new_achievements
 
 
-def _claim_bounties(target_id: int, killer_id: int) -> int:
-    """Claim all active bounties on a target. Returns total bounty points."""
-    bounties = store.load_bounties()
-    total_bonus = 0
-
-    for b_data in bounties:
-        b = Bounty.from_dict(b_data)
-        if b.target_id == target_id and b.is_active():
-            b.claim(killer_id)
-            total_bonus += b.points
-            # Update in list
-            b_data.update(b.to_dict())
-
-    if total_bonus > 0:
-        store.save_bounties(bounties)
-        # Update killer's bounties_collected
-        killer = get_player(killer_id)
-        if killer:
-            killer.bounties_collected += total_bonus
-            save_player(killer)
-
-    return total_bonus
+# Bounty system disabled
+# def _claim_bounties(target_id: int, killer_id: int) -> int:
+#     """Claim all active bounties on a target. Returns total bounty points."""
+#     bounties = store.load_bounties()
+#     total_bonus = 0
+#
+#     for b_data in bounties:
+#         b = Bounty.from_dict(b_data)
+#         if b.target_id == target_id and b.is_active():
+#             b.claim(killer_id)
+#             total_bonus += b.points
+#             b_data.update(b.to_dict())
+#
+#     if total_bonus > 0:
+#         store.save_bounties(bounties)
+#         killer = get_player(killer_id)
+#         if killer:
+#             killer.bounties_collected += total_bonus
+#             save_player(killer)
+#
+#     return total_bonus
 
 
 def restore_expired_cooldowns() -> List[Player]:

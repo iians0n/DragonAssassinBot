@@ -141,6 +141,8 @@ async def send_roles_to_team_gc(bot, team: int, players: List[Player], game_stat
 
     lines = [f"🎭 <b>New Role Assignments — Team {team}</b>", ""]
     for p in players:
+        if p.role == ROLE_NORMAL:
+            continue  # Only show special roles
         lines.append(f"  {get_role_display(p.role)} — <b>{p.name}</b>")
 
     lines.append("")
