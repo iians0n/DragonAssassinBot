@@ -1,4 +1,4 @@
-"""Admin command handlers: /startgame, /endgame, /pausegame, /addplayer, /resetkill, /admin."""
+"""Admin command handlers: /startgame, /endgame, /pausegame, /addplayer, /revive, /admin."""
 
 import logging
 from telegram import Update
@@ -145,10 +145,10 @@ async def addplayer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @dm_only
 @admin_check
-async def resetkill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /resetkill <name or @username> — revive a player."""
+async def revive_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /revive <name or @username> — revive a player."""
     if not context.args:
-        await update.message.reply_text("Usage: /resetkill <name or @username>")
+        await update.message.reply_text("Usage: /revive <name or @username>")
         return
 
     identifier = " ".join(context.args)
@@ -235,7 +235,8 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "• /endgame — End the game\n"
                 "• /pausegame — Pause/resume\n"
                 "• /addplayer — Add players\n"
-                "• /resetkill — Revive players\n"
+                "• /revive — Revive players\n"
+                "• /revertkill — Revert a kill (undo stats & points)\n"
                 "• /assignroles — Assign random roles\n"
                 "• /setteamgc — Set team group chat"
             ),
@@ -507,4 +508,162 @@ async def setteam_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = "No players processed."
 
     await update.message.reply_text(msg, parse_mode="HTML")
+
+
+@dm_only
+@admin_check
+async def revertkill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /revertkill <target> — show kills on a target for admin to revert."""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from storage.json_store import store
+    from datetime import datetime
+    import pytz
+    from config import TIMEZONE
+
+    if not context.args:
+        await update.message.reply_text("Usage: /revertkill <name or @username>")
+        return
+
+    identifier = " ".join(context.args)
+    target = find_player_by_identifier(identifier)
+
+    if not target:
+        await update.message.reply_text(f"❌ Player '{identifier}' not found.")
+        return
+
+    # Find all kills where this player was the target
+    kills = store.load_kill_log()
+    target_kills = [k for k in kills if k.get("target_id") == target.user_id]
+
+    if not target_kills:
+        await update.message.reply_text(
+            f"❌ No kills found on <b>{target.name}</b>.",
+            parse_mode="HTML",
+        )
+        return
+
+    # Sort newest first
+    target_kills.sort(key=lambda k: k.get("timestamp", 0), reverse=True)
+
+    tz = pytz.timezone(TIMEZONE)
+    lines = [f"🔄 <b>Kills on {target.name}</b> — tap to revert:\n"]
+    buttons = []
+
+    for i, kill in enumerate(target_kills, 1):
+        killer = get_player(kill.get("killer_id"))
+        killer_name = killer.name if killer else f"ID:{kill.get('killer_id')}"
+        kill_type = kill.get("kill_type", "normal")
+        type_emoji = "🔇" if kill_type == "stealth" else "🏀"
+        president_tag = " 👑" if kill.get("target_was_president") else ""
+
+        # Format timestamp
+        ts = kill.get("timestamp", 0)
+        try:
+            dt = datetime.fromtimestamp(ts, tz=tz)
+            time_str = dt.strftime("%d %b, %I:%M %p")
+        except Exception:
+            time_str = "Unknown time"
+
+        pts = kill.get("points_awarded", 0)
+        lines.append(
+            f"{i}. {type_emoji} <b>{killer_name}</b> → {target.name}{president_tag}\n"
+            f"    {time_str} • {pts} pts"
+        )
+
+        kill_id = kill.get("id", "")
+        buttons.append([InlineKeyboardButton(
+            f"↩️ Revert #{i}: {killer_name} ({type_emoji})",
+            callback_data=f"revert_kill:{kill_id}",
+        )])
+
+    markup = InlineKeyboardMarkup(buttons)
+    await update.message.reply_text(
+        "\n".join(lines),
+        parse_mode="HTML",
+        reply_markup=markup,
+    )
+
+
+async def revertkill_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle admin tapping a revert button for a specific kill."""
+    from services.game_manager import is_admin
+    from services.combat import revert_kill
+    from storage.json_store import store
+
+    query = update.callback_query
+    await query.answer()
+
+    # Admin check
+    if not is_admin(query.from_user.id):
+        await query.answer("❌ Admins only.", show_alert=True)
+        return
+
+    kill_id = query.data.split(":", 1)[1]
+
+    # Find the kill in the log
+    kills = store.load_kill_log()
+    kill_entry = None
+    for k in kills:
+        if k.get("id") == kill_id:
+            kill_entry = k
+            break
+
+    if not kill_entry:
+        await query.edit_message_text("❌ Kill not found — it may have already been reverted.")
+        return
+
+    # Get player names before reverting
+    killer = get_player(kill_entry.get("killer_id"))
+    target = get_player(kill_entry.get("target_id"))
+    killer_name = killer.name if killer else "Unknown"
+    target_name = target.name if target else "Unknown"
+    kill_type = kill_entry.get("kill_type", "normal")
+    type_emoji = "🔇" if kill_type == "stealth" else "🏀"
+    pts = kill_entry.get("points_awarded", 0)
+    was_president = kill_entry.get("target_was_president", False)
+
+    # Perform the revert
+    success, msg = revert_kill(kill_entry)
+
+    if not success:
+        await query.edit_message_text(f"❌ Failed to revert: {msg}")
+        return
+
+    # Build confirmation
+    details = [
+        f"✅ <b>Kill Reverted Successfully</b>\n",
+        f"{type_emoji} <b>{killer_name}</b> → <b>{target_name}</b>",
+        f"",
+        f"📋 <b>Changes applied:</b>",
+        f"• {target_name}: revived 💚, deaths -1",
+        f"• {killer_name}: {kill_type} kills -1, points -{pts}",
+    ]
+    if was_president:
+        details.append(f"• {target_name}: 👑 president role restored")
+
+    await query.edit_message_text("\n".join(details), parse_mode="HTML")
+
+    # Notify the revived target
+    if target:
+        try:
+            await context.bot.send_message(
+                chat_id=target.user_id,
+                text="💚 A kill on you has been reverted by an admin! You're back in the game!",
+            )
+        except Exception as e:
+            logger.warning(f"Could not notify revived player: {e}")
+
+    # Notify the killer
+    if killer:
+        try:
+            await context.bot.send_message(
+                chat_id=killer.user_id,
+                text=(
+                    f"⚠️ Your {kill_type} kill on <b>{target_name}</b> has been reverted by an admin.\n"
+                    f"Points adjusted: -{pts}"
+                ),
+                parse_mode="HTML",
+            )
+        except Exception as e:
+            logger.warning(f"Could not notify killer about revert: {e}")
 

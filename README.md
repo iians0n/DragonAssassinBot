@@ -1,6 +1,6 @@
 # 🎯 DragonAssassinBot
 
-A Telegram bot for running a week-long campus Assassins game with real-time kill tracking, hidden roles, KDA leaderboards, bounties, kill streaks, and achievements.
+A Telegram bot for running a week-long campus Assassins game with real-time kill tracking, hidden roles, KD leaderboards, bounties, kill streaks, and achievements.
 
 **Platform:** Telegram  
 **Target Users:** NUS college activity participants (4 teams, ~20–50 players)
@@ -12,7 +12,7 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 - **4 teams** compete over 1 week
 - 🏓 **Ball kill** (`/ball`): +10 points, target cooldown 2 hours
 - 🗡️ **Post-it kill** (`/postit`): +5 points, same gender only, 1 hour cooldown
-- 🎯 **Max 2 kills per day** (for non-admins)
+- 🎯 **Max 2 kills per day** (for non-admins) — pending kills count toward the limit
 - 🎭 **Hidden roles** — each team gets 1 Ninja, 1 Sniper, 1 President (randomly assigned daily)
 - **Game hours:** 9 AM – 11 PM SGT
 - **Most points wins!**
@@ -66,8 +66,13 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 | `/addplayer <@user>` | Manually add a player | DM |
 | `/setteam <1-4> <@user>...`| Assign players to a team (Mass assign) | DM |
 | `/toggleteammode` | Toggle AUTO or MANUAL team assignment | DM |
-| `/resetkill <name>` | Revive a player (clear cooldown) | DM |
+| `/revive <name>` | Revive a player (clear cooldown) | DM |
+| `/revertkill <name>` | Revert a kill (undo stats, points, roles) | DM |
 | `/resolvekill <id> approve/reject` | Resolve a disputed kill | DM |
+| `/setpoints <name> <amount>` | Set a player's points to exact value | DM |
+| `/addpoints <name> <amount>` | Add/subtract points (supports negative) | DM |
+| `/setrole <name> <role>` | Manually assign a role | DM/Group |
+| `/viewroles` | View all players and their roles | DM/Group |
 
 ---
 
@@ -124,7 +129,7 @@ Consecutive kills without dying trigger group announcements:
 | 🥷 | Shadow | 3 stealth kills |
 | 🗡️ | Silent Assassin | 5 stealth kills |
 | 💰 | Bounty Hunter | Claim your first bounty |
-| 🛡️ | Survivor | Die 5 times with positive KDA |
+| 🛡️ | Survivor | Die 5 times with positive KD |
 | 🔄 | Comeback Kid | Kill within 10 min of respawning |
 
 ---

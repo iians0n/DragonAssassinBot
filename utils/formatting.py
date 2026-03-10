@@ -42,7 +42,7 @@ def format_player_card(player_data: dict) -> str:
     lines.extend([
         f"⚔️ Kills: {kills_total} ({p['kills_normal']} normal, {p['kills_stealth']} stealth)",
         f"💀 Deaths: {p['deaths']}",
-        f"📊 KDA: {kda:.1f}",
+        f"📊 KD: {kda:.1f}",
         f"🏆 Points: {p['points']}",
     ])
 
@@ -103,7 +103,7 @@ def format_leaderboard(players: List[dict]) -> str:
         team = team_label(p["team"])
         lines.append(
             f"{prefix} <b>{p['name']}</b> ({team}) — "
-            f"{p['points']} pts | K:{kills_total} D:{p['deaths']} | KDA: {kda:.1f}"
+            f"{p['points']} pts | K:{kills_total} D:{p['deaths']} | KD: {kda:.1f}"
         )
 
     return "\n".join(lines)
@@ -136,7 +136,7 @@ def format_team_leaderboard(players: List[dict]) -> str:
         lines.append(
             f"{prefix} {team_label(team_num)} — "
             f"{stats['points']} pts | {stats['kills']}K {stats['deaths']}D | "
-            f"Avg KDA: {avg_kda:.1f} | {stats['count']} players"
+            f"Avg KD: {avg_kda:.1f} | {stats['count']} players"
         )
 
     return "\n".join(lines)

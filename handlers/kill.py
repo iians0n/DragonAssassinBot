@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes, CommandHandler
 from services.registration import get_player, find_player_by_identifier
 from services.combat import validate_kill
 from services.game_manager import get_game_state
-from services.pending_kill import create_pending_kill, has_pending_kill_against
+from services.pending_kill import create_pending_kill, has_pending_kill_against, count_pending_kills_by_killer
 from utils.formatting import player_mention
 from utils.dm_only import dm_only
 from config import KILL_DISPUTE_WINDOW
@@ -103,6 +103,20 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
             f"Wait for it to resolve before reporting another."
         )
         return
+
+    # Check that confirmed + pending kills don't exceed daily limit
+    from config import DAILY_KILL_LIMIT
+    from services.combat import get_daily_kill_count
+    from services.game_manager import is_admin as check_admin
+    if not check_admin(killer.user_id):
+        confirmed = get_daily_kill_count(killer.user_id)
+        pending = count_pending_kills_by_killer(killer.user_id)
+        if confirmed + pending >= DAILY_KILL_LIMIT:
+            await update.message.reply_text(
+                f"❌ You've used all {DAILY_KILL_LIMIT} kills for today "
+                f"(including {pending} pending). Resets tomorrow at 9 AM!"
+            )
+            return
 
     # Create pending kill (NOT executed yet)
     pending = create_pending_kill(

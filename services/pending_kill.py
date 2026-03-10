@@ -49,6 +49,17 @@ def has_pending_kill_against(target_id: int) -> bool:
     return False
 
 
+def count_pending_kills_by_killer(killer_id: int) -> int:
+    """Count active (unresolved) pending kills submitted by a killer."""
+    pending_kills = store.load_pending_kills()
+    count = 0
+    for pk_data in pending_kills:
+        pk = PendingKill.from_dict(pk_data)
+        if pk.killer_id == killer_id and pk.is_active():
+            count += 1
+    return count
+
+
 def confirm_pending_kill(pending_kill_id: str,
                          resolution_type: str = "confirmed by target"
                          ) -> Tuple[Optional[dict], int, list]:
