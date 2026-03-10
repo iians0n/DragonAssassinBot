@@ -19,7 +19,7 @@ from handlers.admin import (
     endgame_command,
     pausegame_command,
     addplayer_command,
-    resetkill_command,
+    revive_command,
     admin_command,
     assignroles_command,
     setteamgc_command,
@@ -29,6 +29,8 @@ from handlers.admin import (
     viewroles_command,
     toggleteammode_command,
     setteam_command,
+    revertkill_command,
+    revertkill_callback_handler,
 )
 from services.scheduler import (
     cooldown_check_job,
@@ -110,7 +112,7 @@ def main():
     app.add_handler(CommandHandler("endgame", endgame_command))
     app.add_handler(CommandHandler("pausegame", pausegame_command))
     app.add_handler(CommandHandler("addplayer", addplayer_command))
-    app.add_handler(CommandHandler("resetkill", resetkill_command))
+    app.add_handler(CommandHandler("revive", revive_command))
     app.add_handler(CommandHandler("resolvekill", resolvekill_command))
     app.add_handler(CommandHandler("admin", admin_command))
     app.add_handler(CommandHandler("assignroles", assignroles_command))
@@ -120,10 +122,12 @@ def main():
     app.add_handler(CommandHandler("viewroles", viewroles_command))
     app.add_handler(CommandHandler("toggleteammode", toggleteammode_command))
     app.add_handler(CommandHandler("setteam", setteam_command))
+    app.add_handler(CommandHandler("revertkill", revertkill_command))
 
     # Kill dispute callbacks (Accept / Dispute inline buttons)
     app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))
     app.add_handler(CallbackQueryHandler(admin_resolve_callback_handler, pattern=r"^admin_(approve|reject):"))
+    app.add_handler(CallbackQueryHandler(revertkill_callback_handler, pattern=r"^revert_kill:"))
 
     # --- Schedule background jobs ---
     job_queue = app.job_queue

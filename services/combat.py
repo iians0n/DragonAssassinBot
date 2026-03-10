@@ -23,8 +23,8 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
 
     # Must be within game hours
     # TODO: changed for testing
-    #if not is_game_hours():
-     #   return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
+    # if not is_game_hours():
+    #   return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
 
     # Can't kill yourself
     if killer.user_id == target.user_id:
@@ -180,6 +180,76 @@ def execute_kill(killer: Player, target: Player, kill_type: str,
     new_achievements = check_achievements(killer, kill_event, bounty_bonus)
 
     return kill_event, bounty_bonus, new_achievements
+
+
+
+def revert_kill(kill_entry: dict) -> Tuple[bool, str]:
+    """
+    Fully revert a confirmed kill. Undoes all stat/point changes for both
+    killer and target, handles role bonuses, and removes the kill from the log.
+    Returns (success, message).
+    """
+    from config import (
+        ROLE_NINJA, ROLE_SNIPER, ROLE_PRESIDENT, ROLE_NORMAL,
+        POINTS_STEALTH_KILL, POINTS_NORMAL_KILL, POINTS_PRESIDENT_KILL,
+    )
+
+    kill_id = kill_entry.get("id")
+    killer_id = kill_entry.get("killer_id")
+    target_id = kill_entry.get("target_id")
+    kill_type = kill_entry.get("kill_type", "normal")
+    points_awarded = kill_entry.get("points_awarded", 0)
+    target_was_president = kill_entry.get("target_was_president", False)
+
+    killer = get_player(killer_id)
+    target = get_player(target_id)
+
+    if not killer or not target:
+        return False, "Could not find killer or target player data."
+
+    # --- Revert target ---
+    target.status = "alive"
+    target.cooldown_until = 0.0
+    target.deaths = max(0, target.deaths - 1)
+
+    # Restore president role if this kill caused demotion
+    if target_was_president:
+        target.role = ROLE_PRESIDENT
+        target.president_used = False
+
+    # --- Revert killer ---
+    if kill_type == "stealth":
+        killer.kills_stealth = max(0, killer.kills_stealth - 1)
+    else:
+        killer.kills_normal = max(0, killer.kills_normal - 1)
+
+    # Subtract base points
+    killer.points -= points_awarded
+
+    # Subtract hidden role bonuses
+    bonus_to_remove = 0
+    if killer.role == ROLE_NINJA and kill_type == "stealth":
+        bonus_to_remove += POINTS_STEALTH_KILL
+    if killer.role == ROLE_SNIPER and kill_type == "normal":
+        bonus_to_remove += POINTS_NORMAL_KILL
+    if target_was_president:
+        bonus_to_remove += POINTS_PRESIDENT_KILL
+    if bonus_to_remove > 0:
+        killer.bonus_points = max(0, killer.bonus_points - bonus_to_remove)
+
+    # Revert streak (can't perfectly restore, just decrement)
+    killer.current_streak = max(0, killer.current_streak - 1)
+
+    # Save both players
+    save_player(killer)
+    save_player(target)
+
+    # Remove kill from log
+    kills = store.load_kill_log()
+    kills = [k for k in kills if k.get("id") != kill_id]
+    store.save_kill_log(kills)
+
+    return True, f"Reverted kill: {killer.name} → {target.name}"
 
 
 # Bounty system disabled

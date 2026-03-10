@@ -55,7 +55,7 @@ async def team_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "",
         f"⚔️ Total Kills: {total_kills}",
         f"💀 Total Deaths: {total_deaths}",
-        f"📊 Avg KDA: {avg_kda:.1f}",
+        f"📊 Avg KD: {avg_kda:.1f}",
         f"🏆 Total Points: {total_points}",
         "",
         "<b>Members:</b>",
@@ -142,9 +142,8 @@ async def targets_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Sort players alphabetically within the team
         team_targets = sorted(targets_by_team[team_id], key=lambda p: p.name.lower())
         for t in team_targets:
-            from utils.formatting import player_mention
-            mention = player_mention(t.username, t.name)
-            lines.append(f"  • {mention}")
+            username_part = f" (@{t.username})" if t.username else ""
+            lines.append(f"  • {t.name}{username_part}")
         lines.append("")  # Empty line between teams
 
     lines.append("<i>Only players who are currently ALIVE are shown.</i>")
