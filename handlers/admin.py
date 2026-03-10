@@ -443,3 +443,68 @@ async def viewroles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
+
+@admin_check
+async def toggleteammode_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /toggleteammode — toggle between auto and manual team assignment."""
+    from services.game_manager import get_game_state, save_game_state
+    game = get_game_state()
+    
+    if game.team_assignment_mode == "auto":
+        game.team_assignment_mode = "manual"
+    else:
+        game.team_assignment_mode = "auto"
+        
+    save_game_state(game)
+    
+    await update.message.reply_text(
+        f"✅ Team assignment mode is now set to <b>{game.team_assignment_mode.upper()}</b>.",
+        parse_mode="HTML",
+    )
+
+
+@admin_check
+async def setteam_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /setteam <team 1-4> <player1> [player2] ... — assign players to a team."""
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text("Usage: /setteam <team 1-4> <player1> [player2] ...\nExample: /setteam 2 @alice Bob")
+        return
+
+    try:
+        team = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Team must be a number (1-4).")
+        return
+
+    if team not in (1, 2, 3, 4):
+        await update.message.reply_text("❌ Team must be 1-4.")
+        return
+
+    from utils.formatting import team_label
+    from services.registration import find_player_by_identifier, save_player
+    team_name = team_label(team)
+    
+    identifiers = context.args[1:]
+    success = []
+    failed = []
+
+    for identifier in identifiers:
+        player = find_player_by_identifier(identifier)
+        if player:
+            player.team = team
+            save_player(player)
+            success.append(player.name)
+        else:
+            failed.append(identifier)
+
+    msg = ""
+    if success:
+        msg += f"✅ Added to <b>{team_name}</b>:\n• " + "\n• ".join(success) + "\n\n"
+    if failed:
+        msg += f"❌ Not found:\n• " + "\n• ".join(failed)
+        
+    if not msg:
+        msg = "No players processed."
+
+    await update.message.reply_text(msg, parse_mode="HTML")
+

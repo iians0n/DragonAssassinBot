@@ -9,7 +9,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 from config import BOT_TOKEN, TIMEZONE
 from handlers.start import start_command, help_command, profile_command, get_registration_handler
 from handlers.kill import ball_command, postit_command, postit_photo_command
-from handlers.leaderboard import leaderboard_command, team_command, stats_command
+from handlers.leaderboard import leaderboard_command, team_command, stats_command, targets_command
 # from handlers.bounty import bounty_command, bounties_command  # Bounty disabled
 from handlers.countdown import countdown_command
 from handlers.achievements import achievements_command
@@ -27,6 +27,8 @@ from handlers.admin import (
     addpoints_command,
     setrole_command,
     viewroles_command,
+    toggleteammode_command,
+    setteam_command,
 )
 from services.scheduler import (
     cooldown_check_job,
@@ -90,6 +92,7 @@ def main():
     app.add_handler(CommandHandler("leaderboard", leaderboard_command))
     app.add_handler(CommandHandler("team", team_command))
     app.add_handler(CommandHandler("stats", stats_command))
+    app.add_handler(CommandHandler("targets", targets_command))
 
     # Bounty (disabled)
     # app.add_handler(CommandHandler("bounty", bounty_command))
@@ -114,8 +117,9 @@ def main():
     app.add_handler(CommandHandler("setteamgc", setteamgc_command))
     app.add_handler(CommandHandler("setpoints", setpoints_command))
     app.add_handler(CommandHandler("addpoints", addpoints_command))
-    app.add_handler(CommandHandler("setrole", setrole_command))
     app.add_handler(CommandHandler("viewroles", viewroles_command))
+    app.add_handler(CommandHandler("toggleteammode", toggleteammode_command))
+    app.add_handler(CommandHandler("setteam", setteam_command))
 
     # Kill dispute callbacks (Accept / Dispute inline buttons)
     app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))

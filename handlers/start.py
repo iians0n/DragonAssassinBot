@@ -18,7 +18,7 @@ from utils.dm_only import dm_only
 logger = logging.getLogger(__name__)
 
 # Conversation states for registration
-NAME, GENDER, TEAM = range(3)
+NAME, GENDER = range(2)
 
 GAME_INTRO = (
     "🎯 <b>ASSASSINS GAME TRACKER</b> 🎯\n\n"
@@ -65,7 +65,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /profile - Your stats and role\n"
         "• /ball @target - Report a ball kill (ping pong)\n"
         "• /postit @target [photo] - Report a stealth kill (post-it)\n"
-        "   <i>(You can attach a photo or reply to one)</i>\n\n"
+        "   <i>(You can attach a photo or reply to one)</i>\n"
+        "• /targets - View all alive targets on other teams\n\n"
         "📊 <b>Stats & Standings</b>\n"
         "• /leaderboard - Top 10 players\n"
         "• /team - Team standings\n"
@@ -141,37 +142,11 @@ async def register_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def register_gender(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Receive gender, ask for team."""
+    """Receive gender, complete registration."""
     query = update.callback_query
     await query.answer()
 
     gender = query.data.split("_")[1]  # "M" or "F"
-    context.user_data["reg_gender"] = gender
-
-    keyboard = [
-        [
-            InlineKeyboardButton(f"🔴 Team 1", callback_data="team_1"),
-            InlineKeyboardButton(f"🔵 Team 2", callback_data="team_2"),
-        ],
-        [
-            InlineKeyboardButton(f"🟢 Team 3", callback_data="team_3"),
-            InlineKeyboardButton(f"🟡 Team 4", callback_data="team_4"),
-        ],
-        [InlineKeyboardButton("🎲 Random (auto-balance)", callback_data="team_0")],
-    ]
-    await query.edit_message_text(
-        "Choose your team:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
-    return TEAM
-
-
-async def register_team(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Receive team, complete registration."""
-    query = update.callback_query
-    await query.answer()
-
-    team = int(query.data.split("_")[1])  # 0-4
     user = update.effective_user
 
     try:
@@ -179,13 +154,19 @@ async def register_team(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_id=user.id,
             username=user.username or "",
             name=context.user_data["reg_name"],
-            gender=context.user_data["reg_gender"],
-            team=team,
+            gender=gender,
+            team=0,
         )
         await query.edit_message_text(
             f"✅ <b>Registration Complete!</b>\n\n"
             f"{format_player_card(player.to_dict())}\n\n"
-            f"Use /profile anytime to see your stats. Good luck! 🎯",
+            f"Use /profile anytime to see your stats. Good luck! 🎯\n\n"
+            f"<b>Here are some commands to get started:</b>\n"
+            f"• /targets - See who you can attack\n"
+            f"• /ball @target - Report a ping pong kill\n"
+            f"• /postit @target - Report a stealth kill\n"
+            f"• /leaderboard - Check the standings\n\n"
+            f"<i>Type /help to see the full list of commands at any time.</i>",
             parse_mode="HTML",
         )
     except ValueError as e:
@@ -232,7 +213,6 @@ def get_registration_handler() -> ConversationHandler:
         states={
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, register_name)],
             GENDER: [CallbackQueryHandler(register_gender, pattern="^gender_")],
-            TEAM: [CallbackQueryHandler(register_team, pattern="^team_")],
         },
         fallbacks=[CommandHandler("cancel", register_cancel)],
     )

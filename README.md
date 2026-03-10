@@ -39,10 +39,11 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 | Command | Description |
 |---|---|
 | `/start` | Show game info and register button |
-| `/register` | Sign up — enter name, gender, team |
+| `/register` | Sign up — enter name, gender |
 | `/profile` | View your stats, role, streak, and badges |
 | `/ball <name>` | Report a ball kill (ping pong throw) |
 | `/postit <name>` | Report a post-it kill (requires photo proof) |
+| `/targets` | View all alive targets on other teams |
 | `/leaderboard` | View top 10 players + team rankings |
 | `/team` | View your team's stats and members |
 | `/stats <name>` | View detailed stats for any player |
@@ -63,6 +64,8 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 | `/pausegame` | Toggle pause/resume | DM |
 | `/assignroles` | Randomly assign roles to all teams | DM |
 | `/addplayer <@user>` | Manually add a player | DM |
+| `/setteam <1-4> <@user>...`| Assign players to a team (Mass assign) | DM |
+| `/toggleteammode` | Toggle AUTO or MANUAL team assignment | DM |
 | `/resetkill <name>` | Revive a player (clear cooldown) | DM |
 | `/resolvekill <id> approve/reject` | Resolve a disputed kill | DM |
 

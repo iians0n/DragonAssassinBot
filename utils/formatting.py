@@ -3,8 +3,8 @@
 from typing import List, Dict, Tuple
 
 
-TEAM_EMOJIS = {1: "🔴", 2: "🔵", 3: "🟢", 4: "🟡"}
-TEAM_NAMES = {1: "Team Red", 2: "Team Blue", 3: "Team Green", 4: "Team Yellow"}
+TEAM_EMOJIS = {0: "⚪️", 1: "🔴", 2: "🔵", 3: "🟢", 4: "🟡"}
+TEAM_NAMES = {0: "Unassigned", 1: "Team Red", 2: "Team Blue", 3: "Team Green", 4: "Team Yellow"}
 
 
 def team_label(team: int) -> str:
