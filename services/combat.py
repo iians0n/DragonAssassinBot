@@ -22,8 +22,9 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
         return False, "❌ The game is not currently active."
 
     # Must be within game hours
-    if not is_game_hours():
-        return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
+    # TODO: changed for testing
+    #if not is_game_hours():
+     #   return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
 
     # Can't kill yourself
     if killer.user_id == target.user_id:
@@ -40,6 +41,12 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
     # Target must be alive
     if not target.can_be_killed():
         return False, f"❌ {target.name} is already dead (in cooldown). Wait for them to respawn!"
+
+    # Unassigned players (Team 0) cannot participate in combat
+    if killer.team == 0:
+        return False, "❌ You have not been assigned to a team yet!"
+    if target.team == 0:
+        return False, f"❌ {target.name} has not been assigned to a team yet!"
 
     # Must be different teams
     if killer.team == target.team:

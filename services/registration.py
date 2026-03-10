@@ -34,9 +34,13 @@ def register_player(user_id: int, username: str, name: str, gender: str, team: i
     if key in players:
         raise ValueError("You are already registered!")
 
-    # Auto-balance: if team is 0, assign to smallest team
+    # Auto-balance: if team is 0, check the team assignment mode
     if team == 0:
-        team = _get_smallest_team(players)
+        from services.game_manager import get_game_state
+        game = get_game_state()
+        if game.team_assignment_mode == "auto":
+            team = _get_smallest_team(players)
+        # If manual, team stays 0 (Unassigned)
 
     player = Player(
         user_id=user_id,

@@ -100,3 +100,53 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         format_player_card(stats),
         parse_mode="HTML",
     )
+
+
+@dm_only
+async def targets_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /targets — show a list of valid targets (alive players on other teams)."""
+    player = get_player(update.effective_user.id)
+    if not player:
+        await update.message.reply_text("❌ You're not registered. Use /register first.")
+        return
+
+    if player.team == 0:
+        await update.message.reply_text("❌ You are currently Unassigned. You have no targets until an admin assigns you a team!")
+        return
+
+    from services.registration import get_all_players
+    all_players = get_all_players()
+
+    # Filter targets: alive, not on player's team, and not unassigned
+    targets = [
+        p for p in all_players
+        if p.team != 0 and p.team != player.team and p.is_alive()
+    ]
+
+    if not targets:
+        await update.message.reply_text("🎯 <b>No valid targets found!</b> Everyone is either dead or on your team.", parse_mode="HTML")
+        return
+
+    # Group by team
+    from collections import defaultdict
+    targets_by_team = defaultdict(list)
+    for t in targets:
+        targets_by_team[t.team].append(t)
+
+    lines = ["🎯 <b>YOUR TARGETS</b> 🎯\n"]
+    
+    # Sort teams 1-4
+    for team_id in sorted(targets_by_team.keys()):
+        lines.append(f"<b>{team_label(team_id)}</b>")
+        
+        # Sort players alphabetically within the team
+        team_targets = sorted(targets_by_team[team_id], key=lambda p: p.name.lower())
+        for t in team_targets:
+            from utils.formatting import player_mention
+            mention = player_mention(t.username, t.name)
+            lines.append(f"  • {mention}")
+        lines.append("")  # Empty line between teams
+
+    lines.append("<i>Only players who are currently ALIVE are shown.</i>")
+    
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")

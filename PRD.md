@@ -23,7 +23,7 @@ Target Users: NUS college activity participants (4 teams, ~20-50 players)
 3.1 Player & Team Registration
 
 • /start — Shows game info + register button
-• /register — Collect: name, telegram username, gender (M/F), team choice (or auto-assign)
+• /register — Collect: name, telegram username, gender (M/F)
 • /myprofile — View own stats
 • Admin can: add/remove players, assign teams, reset game
 3.2 Kill Reporting System
@@ -99,6 +99,7 @@ Bounty Board: /bounties — List all active bounties (anonymized target)
 | /profile              | All   | View your stats       |
 | /kill @target         | All   | Report normal kill    |
 | /stealthkill @target  | All   | Report stealth kill   |
+| /targets              | All   | View valid targets    |
 | /leaderboard          | All   | View rankings         |
 | /team                 | All   | View team stats       |
 | /stats @user          | All   | View someone's stats  |
@@ -109,6 +110,8 @@ Bounty Board: /bounties — List all active bounties (anonymized target)
 | /endgame              | Admin | End game              |
 | /pausegame            | Admin | Pause                 |
 | /addplayer @user      | Admin | Manual add            |
+| /setteam @user...     | Admin | Assign teams manually |
+| /toggleteammode       | Admin | Toggle assignment mode|
 | /resetkill @user      | Admin | Revive manually       |
 5. Data Model
 
@@ -121,7 +124,7 @@ Game: status (pending/active/paused/completed), start_time, end_time, day_start_
 
 6. User Flows
 
-Registration: /start → enter name, gender, team pref → confirmed
+Registration: /start → enter name, gender → confirmed (placed in auto-balance or unassigned)
 
 Kill: Killer does /kill @target → Bot validates (alive? within 9am-11pm? not in cooldown?) → Valid: target cooldown 2hr, killer +1 point, announce in group. Invalid: error message.
 
