@@ -57,19 +57,20 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
     if kill_type == "stealth" and killer.gender != target.gender:
         return False, "❌ Stealth kills require killer and target to be the same gender."
 
-    # Daily kill limit
-    from config import DAILY_KILL_LIMIT
-    from services.game_manager import is_admin
-    if not is_admin(killer.user_id):
-        today_kills = get_daily_kill_count(killer.user_id)
-        if today_kills >= DAILY_KILL_LIMIT:
-            return False, f"❌ You've used all {DAILY_KILL_LIMIT} kills for today. Resets tomorrow at 9 AM!"
+    # Daily kill limit (normal kills only — stealth kills are unlimited)
+    if kill_type != "stealth":
+        from config import DAILY_KILL_LIMIT
+        from services.game_manager import is_admin
+        if not is_admin(killer.user_id):
+            today_kills = get_daily_kill_count(killer.user_id)
+            if today_kills >= DAILY_KILL_LIMIT:
+                return False, f"❌ You've used all {DAILY_KILL_LIMIT} normal kills for today. Resets tomorrow at 9 AM!"
 
     return True, ""
 
 
 def get_daily_kill_count(user_id: int) -> int:
-    """Count how many kills a player has made today (SGT)."""
+    """Count how many normal (non-stealth) kills a player has made today (SGT)."""
     from datetime import datetime
     import pytz
     from config import TIMEZONE
@@ -82,13 +83,15 @@ def get_daily_kill_count(user_id: int) -> int:
     kills = store.load_kill_log()
     count = 0
     for kill in kills:
-        if kill.get("killer_id") == user_id and kill.get("timestamp", 0) >= today_start_ts:
+        if (kill.get("killer_id") == user_id
+                and kill.get("timestamp", 0) >= today_start_ts
+                and kill.get("kill_type") != "stealth"):
             count += 1
     return count
 
 
 def get_kills_remaining(user_id: int) -> int:
-    """Get how many kills a player has left today."""
+    """Get how many normal kills a player has left today (stealth kills are unlimited)."""
     from config import DAILY_KILL_LIMIT
     return max(0, DAILY_KILL_LIMIT - get_daily_kill_count(user_id))
 

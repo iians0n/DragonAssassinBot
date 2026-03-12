@@ -12,7 +12,7 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 - **4 teams** compete over 1 week
 - 🏓 **Ball kill** (`/ball`): +10 points, target cooldown 2 hours
 - 🗡️ **Post-it kill** (`/postit`): +5 points, same gender only, 1 hour cooldown
-- 🎯 **Max 2 kills per day** (for non-admins) — pending kills count toward the limit
+- 🎯 **Max 2 ball kills per day** (for non-admins) — pending kills count toward the limit. Stealth kills are **unlimited**
 - 🎭 **Hidden roles** — each team gets 1 Ninja, 1 Sniper, 1 President (randomly assigned daily)
 - **Game hours:** 9 AM – 11 PM SGT
 - **Most points wins!**

@@ -49,14 +49,17 @@ def has_pending_kill_against(target_id: int) -> bool:
     return False
 
 
-def count_pending_kills_by_killer(killer_id: int) -> int:
-    """Count active (unresolved) pending kills submitted by a killer."""
+def count_pending_kills_by_killer(killer_id: int, kill_type: str = None) -> int:
+    """Count active (unresolved) pending kills submitted by a killer.
+    If kill_type is specified, only count pending kills of that type.
+    """
     pending_kills = store.load_pending_kills()
     count = 0
     for pk_data in pending_kills:
         pk = PendingKill.from_dict(pk_data)
         if pk.killer_id == killer_id and pk.is_active():
-            count += 1
+            if kill_type is None or pk_data.get("kill_type") == kill_type:
+                count += 1
     return count
 
 
