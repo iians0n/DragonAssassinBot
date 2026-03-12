@@ -96,6 +96,14 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
         await update.message.reply_text(error_msg, parse_mode="HTML")
         return
 
+    # Check if killer has a pending kill against them (can't kill while pending death)
+    if has_pending_kill_against(killer.user_id):
+        await update.message.reply_text(
+            "❌ You have a pending kill against you! "
+            "Wait for it to resolve before reporting a new kill."
+        )
+        return
+
     # Check for duplicate pending kill on same target
     if has_pending_kill_against(target.user_id):
         await update.message.reply_text(
@@ -104,19 +112,21 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
         )
         return
 
-    # Check that confirmed + pending kills don't exceed daily limit
-    from config import DAILY_KILL_LIMIT
-    from services.combat import get_daily_kill_count
-    from services.game_manager import is_admin as check_admin
-    if not check_admin(killer.user_id):
-        confirmed = get_daily_kill_count(killer.user_id)
-        pending = count_pending_kills_by_killer(killer.user_id)
-        if confirmed + pending >= DAILY_KILL_LIMIT:
-            await update.message.reply_text(
-                f"❌ You've used all {DAILY_KILL_LIMIT} kills for today "
-                f"(including {pending} pending). Resets tomorrow at 9 AM!"
-            )
-            return
+    # Check that confirmed + pending normal kills don't exceed daily limit
+    # (stealth kills are unlimited)
+    if kill_type != "stealth":
+        from config import DAILY_KILL_LIMIT
+        from services.combat import get_daily_kill_count
+        from services.game_manager import is_admin as check_admin
+        if not check_admin(killer.user_id):
+            confirmed = get_daily_kill_count(killer.user_id)
+            pending = count_pending_kills_by_killer(killer.user_id, kill_type="normal")
+            if confirmed + pending >= DAILY_KILL_LIMIT:
+                await update.message.reply_text(
+                    f"❌ You've used all {DAILY_KILL_LIMIT} normal kills for today "
+                    f"(including {pending} pending). Resets tomorrow at 9 AM!"
+                )
+                return
 
     # Create pending kill (NOT executed yet)
     pending = create_pending_kill(
@@ -129,10 +139,12 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
     target_mention = player_mention(target.username, target.name)
     killer_mention = player_mention(killer.username, killer.name)
 
-    # Reply to killer with kills remaining
-    from services.combat import get_kills_remaining
-    kills_left = get_kills_remaining(killer.user_id) - 1  # -1 for this pending kill
-    kills_left_text = f"\n🎯 Kills remaining today: {max(0, kills_left)}"
+    # Reply to killer with kills remaining (only for normal kills)
+    kills_left_text = ""
+    if kill_type != "stealth":
+        from services.combat import get_kills_remaining
+        kills_left = get_kills_remaining(killer.user_id) - 1  # -1 for this pending kill
+        kills_left_text = f"\n🎯 Normal kills remaining today: {max(0, kills_left)}"
 
     await update.message.reply_text(
         f"⏳ Kill reported on <b>{target_mention}</b>!\n\n"
