@@ -22,9 +22,10 @@ def validate_kill(killer: Player, target: Player, kill_type: str, game_status: s
         return False, "❌ The game is not currently active."
 
     # Must be within game hours
-    # TODO: changed for testing
-    # if not is_game_hours():
-    #   return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
+
+    if not is_game_hours():
+        return False, "❌ Kills are only allowed during game hours (9 AM – 11 PM SGT)."
+
 
     # Can't kill yourself
     if killer.user_id == target.user_id:
