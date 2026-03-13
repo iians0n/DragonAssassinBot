@@ -99,16 +99,16 @@ async def _process_kill(update: Update, context: ContextTypes.DEFAULT_TYPE, kill
     # Check if killer has a pending kill against them (can't kill while pending death)
     if has_pending_kill_against(killer.user_id):
         await update.message.reply_text(
-            "❌ You have a pending kill against you! "
-            "Wait for it to resolve before reporting a new kill."
+            "❌ You have a pending or disputed kill against you! "
+            "Wait for it to be resolved before reporting a new kill."
         )
         return
 
     # Check for duplicate pending kill on same target
     if has_pending_kill_against(target.user_id):
         await update.message.reply_text(
-            f"⚠️ There's already a pending kill on {target.name}. "
-            f"Wait for it to resolve before reporting another."
+            f"⚠️ There's already a pending or disputed kill on {target.name}. "
+            f"Wait for it to be resolved before reporting another."
         )
         return
 

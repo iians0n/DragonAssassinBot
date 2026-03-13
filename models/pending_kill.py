@@ -30,6 +30,10 @@ class PendingKill:
         """Check if this pending kill is still awaiting action."""
         return self.status == "pending"
 
+    def is_unresolved(self) -> bool:
+        """Check if this kill is still awaiting resolution (pending OR disputed)."""
+        return self.status in ("pending", "disputed")
+
     def to_dict(self) -> dict:
         return asdict(self)
 
