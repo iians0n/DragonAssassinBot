@@ -44,7 +44,7 @@ def has_pending_kill_against(target_id: int) -> bool:
     pending_kills = store.load_pending_kills()
     for pk_data in pending_kills:
         pk = PendingKill.from_dict(pk_data)
-        if pk.target_id == target_id and pk.is_active():
+        if pk.target_id == target_id and pk.is_unresolved():
             return True
     return False
 
@@ -57,7 +57,7 @@ def count_pending_kills_by_killer(killer_id: int, kill_type: str = None) -> int:
     count = 0
     for pk_data in pending_kills:
         pk = PendingKill.from_dict(pk_data)
-        if pk.killer_id == killer_id and pk.is_active():
+        if pk.killer_id == killer_id and pk.is_unresolved():
             if kill_type is None or pk_data.get("kill_type") == kill_type:
                 count += 1
     return count
