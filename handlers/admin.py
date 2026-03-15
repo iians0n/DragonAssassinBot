@@ -238,7 +238,8 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "• /revive — Revive players\n"
                 "• /revertkill — Revert a kill (undo stats & points)\n"
                 "• /assignroles — Assign random roles\n"
-                "• /setteamgc — Set team group chat"
+                "• /setteamgc — Set team group chat\n"
+                "• /resetgame — Reset game for a new round"
             ),
             parse_mode="HTML",
         )
@@ -666,4 +667,81 @@ async def revertkill_callback_handler(update: Update, context: ContextTypes.DEFA
             )
         except Exception as e:
             logger.warning(f"Could not notify killer about revert: {e}")
+
+
+@dm_only
+@admin_check
+async def resetgame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /resetgame CONFIRM — reset game for a new round, keeping player registrations."""
+    from storage.json_store import store
+    from services.game_manager import get_game_state, save_game_state
+
+    # Require explicit confirmation
+    if not context.args or context.args[0].upper() != "CONFIRM":
+        # Show preview of what will be reset
+        players = store.load_players()
+        player_count = len(players)
+        kills = store.load_kill_log()
+
+        await update.message.reply_text(
+            "⚠️ <b>Game Reset Preview</b>\n\n"
+            f"👥 {player_count} players will have stats reset\n"
+            f"🗡️ {len(kills)} kills will be cleared\n"
+            "📋 Pending kills & bounties will be cleared\n"
+            "🏷️ Teams will be cleared (set to unassigned)\n"
+            "🎭 Roles will be reset to normal\n"
+            "🎮 Game status will be set to pending\n\n"
+            "✅ Player registrations will be <b>kept</b>\n\n"
+            "To confirm, run:\n"
+            "<code>/resetgame CONFIRM</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    # 1. Reset game state
+    game = get_game_state()
+    game.status = "pending"
+    game.start_time = 0.0
+    game.end_time = 0.0
+    save_game_state(game)
+
+    # 2. Reset all player stats (keep registration info)
+    players = store.load_players()
+    for uid, p in players.items():
+        p["status"] = "alive"
+        p["cooldown_until"] = 0.0
+        p["kills_normal"] = 0
+        p["kills_stealth"] = 0
+        p["deaths"] = 0
+        p["points"] = 0
+        p["bounties_placed"] = 0
+        p["bounties_collected"] = 0
+        p["current_streak"] = 0
+        p["best_streak"] = 0
+        p["achievements"] = []
+        p["role"] = "normal"
+        p["president_used"] = False
+        p["bonus_points"] = 0
+        p["team"] = 0  # Unassigned for manual reassignment
+    store.save_players(players)
+
+    # 3. Clear kill log, pending kills, bounties
+    store.save_kill_log([])
+    store.save_pending_kills([])
+    store.save_bounties([])
+
+    player_count = len(players)
+    await update.message.reply_text(
+        "✅ <b>Game has been reset!</b>\n\n"
+        f"👥 {player_count} players kept (stats cleared, teams unassigned)\n"
+        "🗡️ Kill log cleared\n"
+        "📋 Pending kills cleared\n"
+        "💰 Bounties cleared\n"
+        "🎮 Game status: pending\n\n"
+        "Next steps:\n"
+        "1. Use /setteam to assign teams\n"
+        "2. Use /assignroles to assign roles\n"
+        "3. Use /startgame to begin!",
+        parse_mode="HTML",
+    )
 
