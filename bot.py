@@ -120,6 +120,7 @@ def main():
     app.add_handler(CommandHandler("setteamgc", setteamgc_command))
     app.add_handler(CommandHandler("setpoints", setpoints_command))
     app.add_handler(CommandHandler("addpoints", addpoints_command))
+    app.add_handler(CommandHandler("setrole", setrole_command))
     app.add_handler(CommandHandler("viewroles", viewroles_command))
     app.add_handler(CommandHandler("toggleteammode", toggleteammode_command))
     app.add_handler(CommandHandler("setteam", setteam_command))
