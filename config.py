@@ -29,14 +29,14 @@ MIN_BOUNTY = 1
 KILL_DISPUTE_WINDOW = 900  # 15 minutes
 
 # Daily kill limit
-DAILY_KILL_LIMIT = 2  # Max kills per player per day
+DAILY_KILL_LIMIT = 3  # Max kills per player per day
 
 # Rate limiting
 MAX_COMMANDS_PER_MINUTE = 10
 
 # Points
-POINTS_NORMAL_KILL = 10
-POINTS_STEALTH_KILL = 5
+POINTS_NORMAL_KILL = 5
+POINTS_STEALTH_KILL = 10
 POINTS_PRESIDENT_KILL = 50  # Bonus for killing a president (applied at day end)
 
 # Roles
