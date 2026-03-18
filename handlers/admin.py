@@ -237,6 +237,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "• /addplayer — Add players\n"
                 "• /revive — Revive players\n"
                 "• /revertkill — Revert a kill (undo stats & points)\n"
+                "• /logkill — Log a kill manually\n"
                 "• /assignroles — Assign random roles\n"
                 "• /setteamgc — Set team group chat\n"
                 "• /resetgame — Reset game for a new round"
@@ -744,4 +745,89 @@ async def resetgame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "3. Use /startgame to begin!",
         parse_mode="HTML",
     )
+
+
+@admin_check
+async def logkill_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /logkill <killer> <target> [stealth/normal] — manually log a kill."""
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text("Usage: /logkill <killer> <target> [stealth/normal]\nExample: /logkill @alice @bob stealth")
+        return
+
+    # Parse args: Last arg might be kill type
+    kill_type = "normal"
+    last_arg = context.args[-1].lower()
+    if last_arg in ("stealth", "normal"):
+        kill_type = last_arg
+        names_args = context.args[:-1]
+    else:
+        names_args = context.args
+
+    if len(names_args) < 2:
+        await update.message.reply_text("Usage: /logkill <killer> <target> [stealth/normal]")
+        return
+
+    # Assume first arg is killer identifier, the rest is target
+    killer_identifier = names_args[0]
+    target_identifier = " ".join(names_args[1:])
+
+    killer = find_player_by_identifier(killer_identifier)
+    target = find_player_by_identifier(target_identifier)
+
+    if not killer:
+        await update.message.reply_text(f"❌ Killer '{killer_identifier}' not found.")
+        return
+    if not target:
+        await update.message.reply_text(f"❌ Target '{target_identifier}' not found.")
+        return
+
+    from services.combat import execute_kill
+    try:
+        # execute_kill bypasses game hours, limits, cooldown restrictions
+        kill_event, bounty_bonus, new_achievements = execute_kill(
+            killer, target, kill_type, witness="Admin Manual Log"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error executing kill: {e}")
+        return
+
+    # Send confirmation to admin
+    await update.message.reply_text(
+        f"✅ <b>Kill manually logged!</b>\n\n"
+        f"🔪 Killer: <b>{killer.name}</b>\n"
+        f"💀 Target: <b>{target.name}</b>\n"
+        f"🏷️ Type: {kill_type}\n"
+        f"🏅 Points Awarded: {kill_event.points_awarded}",
+        parse_mode="HTML"
+    )
+
+    # Notify Target
+    try:
+        await context.bot.send_message(
+            chat_id=target.user_id,
+            text=f"💀 <b>You have been assassinated!</b> (Admin Override)\n"
+                 f"You were eliminated by {killer.name} via a manual admin log.\n"
+                 f"You are now in cooldown.",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logger.warning(f"Could not notify target {target.name} of admin kill: {e}")
+
+    # Notify GC
+    from services.game_manager import get_game_state
+    game = get_game_state()
+    type_emoji = "🔇" if kill_type == "stealth" else "🏀"
+    president_tag = " 👑" if kill_event.target_was_president else ""
+    
+    announcement = (
+        f"⚔️ <b>KILL CONFIRMED (Admin Override)</b> ⚔️\n\n"
+        f"{type_emoji} <b>{killer.name}</b> assassinated <b>{target.name}</b>{president_tag}!\n"
+    )
+    if kill_event.target_was_president:
+        announcement += "\n👑 <b>THE PRESIDENT HAS FALLEN!</b> 👑"
+
+    try:
+        await send_to_group(context.bot, announcement, game)
+    except Exception as e:
+        logger.warning(f"Could not announce admin kill to group: {e}")
 

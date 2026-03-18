@@ -32,6 +32,7 @@ from handlers.admin import (
     revertkill_command,
     revertkill_callback_handler,
     resetgame_command,
+    logkill_command,
 )
 from services.scheduler import (
     cooldown_check_job,
@@ -126,6 +127,7 @@ def main():
     app.add_handler(CommandHandler("setteam", setteam_command))
     app.add_handler(CommandHandler("revertkill", revertkill_command))
     app.add_handler(CommandHandler("resetgame", resetgame_command))
+    app.add_handler(CommandHandler("logkill", logkill_command))
 
     # Kill dispute callbacks (Accept / Dispute inline buttons)
     app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))
