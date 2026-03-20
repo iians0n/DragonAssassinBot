@@ -90,24 +90,31 @@ _QUOTES = {
     "Team Carry":        "Without you, the team would've needed a map.",
     "Ball Only":         "No tricks, no stealth — just pure confidence.",
     "Wild": [
-        "Every team needs someone keeping an eye on things. That's you.",
-        "Strategic patience is an underrated skill. You nailed it.",
-        "Some play the game, others play the long game. You chose wisely.",
-        "Peace was always an option — and you chose it.",
-        "The calm in the storm. Every squad needs one.",
+        "You showed up, you played, and you made this game better. GG!",
+        "Not every hero needs a kill count. Some just need to be there.",
+        "The real MVP is anyone who made the game more fun. That's you.",
+        "Win or lose, you were part of something awesome. Thanks for playing!",
+        "The best part of assassins isn't the kills — it's the memories.",
+        "You brought the vibes. And vibes are everything.",
+        "Every legend has a humble beginning. This is yours.",
+        "The game wouldn't be the same without you. Literally.",
     ]
 }
 
 
 _WILD_CARDS = [
-    ("🕵️", "Intelligence Agent", "Gathered intel for the team."),
-    ("🐢", "The Turtle",         "Played it safe and smart."),
-    ("😴", "The Sleeper Agent",  "Waiting for the perfect moment."),
-    ("🧆", "Ice Cold",           "Coolest player in the game."),
-    ("🦎", "The Chameleon",      "Blended in perfectly."),
-    ("🫖", "The Tea Sipper",     "Kept calm while the chaos unfolded."),
-    ("🌿", "The Pacifist",       "Chose peace. We respect that."),
-    ("🎭", "The Understudy",     "Every great show needs a great cast."),
+    ("🌟", "The Wildcard",       "Unpredictable, unforgettable."),
+    ("🧠", "The Strategist",     "Played the game on a whole different level."),
+    ("🎬", "Fan Favourite",      "The people's champion."),
+    ("🚀", "Rising Star",        "Just getting started — watch this space."),
+    ("🌈", "Good Vibes Only",    "Brought the energy every single day."),
+    ("🧲", "The Magnet",         "Drew people in. Natural-born leader."),
+    ("🎧", "The Cool One",       "Effortlessly smooth. Main character energy."),
+    ("🔥", "Dark Horse",         "Quiet, but dangerous. Next season is yours."),
+    ("🏆", "Most Improved",      "Growth is the real win."),
+    ("👑", "The Legend",         "Some are born legendary."),
+    ("✨", "Spirit Award",       "Heart and soul of the game."),
+    ("🎭", "The Entertainer",    "Kept everyone on their toes."),
 ]
 
 
