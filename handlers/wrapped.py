@@ -58,11 +58,13 @@ async def wrapped_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Send every card to admin as a photo with caption
     for player, img_bytes, (emoji, title, desc, quote) in cards:
+        kd = round(player.kills_total / max(player.deaths, 1), 2)
         caption = (
             f"<b>{player.name}</b> (@{player.username})\n"
             f"{emoji} <b>{title}</b> — {desc}\n"
-            f"<i>\"{quote}\"</i>\n"
-            f"Pts: {player.points} | K: {player.kills_total} | D: {player.deaths}"
+            f"<i>\"{quote}\"</i>\n\n"
+            f"⚔️ Kills: {player.kills_total} | 💀 Deaths: {player.deaths}\n"
+            f"📊 K/D: {kd} | 🏅 Points: {player.points}"
         )
         await context.bot.send_photo(
             chat_id=update.effective_user.id,
@@ -90,11 +92,14 @@ async def _send_wrapped(update: Update, context: ContextTypes.DEFAULT_TYPE):
     failed = 0
 
     for player, img_bytes, (emoji, title, desc, quote) in _cached_cards:
+        kd = round(player.kills_total / max(player.deaths, 1), 2)
         caption = (
             f"🎮 <b>ASSASSINS WRAPPED 2026</b> 🎮\n\n"
             f"Hey <b>{player.name}</b>, here's your Wrapped!\n\n"
             f"Your award: {emoji} <b>{title}</b>\n"
             f"<i>\"{desc}\"</i>\n\n"
+            f"⚔️ Kills: {player.kills_total} | 💀 Deaths: {player.deaths}\n"
+            f"📊 K/D: {kd} | 🏅 Points: {player.points}\n\n"
             f"📢 <b>Quote of the Game:</b>\n"
             f"<i>\"{quote}\"</i>\n\n"
             f"GG, see you next season! 🎯"

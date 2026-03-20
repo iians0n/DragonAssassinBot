@@ -319,8 +319,8 @@ def generate_wrapped_card(player: Player, superlative: Tuple[str, str, str, str]
 
     # — Team label ────────────────────────────────────────────
     team_name = TEAM_NAMES.get(player.team, f"Team {player.team}").upper()
-    team_emoji = TEAM_EMOJIS.get(player.team, "")
-    team_text = f"{team_emoji} {team_name}"
+    # Don't include emojis — Inter font can't render them
+    team_text = team_name
     bbox = draw.textbbox((0, 0), team_text, font=font_team)
     tw = bbox[2] - bbox[0]
     draw.text((BOX_CENTER_X - (tw // 2), y), team_text, fill=TEXT_ACCENT, font=font_team)
@@ -372,7 +372,8 @@ def generate_wrapped_card(player: Player, superlative: Tuple[str, str, str, str]
     draw.line([(BOX_CENTER_X - line_w // 2, y), (BOX_CENTER_X + line_w // 2, y)], fill=(*LABEL_DIM, 60), width=1)
     y += 30
 
-    award_line = f"{emoji}  {title}".upper()
+    # Strip emoji from award title — Inter font can't render them
+    award_line = title.upper()
     bbox = draw.textbbox((0, 0), award_line, font=font_award_title)
     tw = bbox[2] - bbox[0]
     if tw > BOX_W - 100:
@@ -393,7 +394,8 @@ def generate_wrapped_card(player: Player, superlative: Tuple[str, str, str, str]
 
     # — Funny Quote ───────────────────────────────────────────
     draw = ImageDraw.Draw(img)
-    quote_line = f"❝ {quote} ❞"
+    # Strip fancy quotes — Inter font can't render them
+    quote_line = quote
     bbox = draw.textbbox((0, 0), quote_line, font=font_quote)
     tw = bbox[2] - bbox[0]
     draw.text((BOX_CENTER_X - (tw // 2), y), quote_line, fill=TEXT_ACCENT, font=font_quote)
