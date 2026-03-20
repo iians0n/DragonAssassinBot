@@ -14,6 +14,7 @@ from handlers.leaderboard import leaderboard_command, team_command, stats_comman
 from handlers.countdown import countdown_command
 from handlers.achievements import achievements_command
 from handlers.dispute import kill_callback_handler, admin_resolve_callback_handler, resolvekill_command, dispute_reason_handler
+from handlers.wrapped import wrapped_command
 from handlers.admin import (
     startgame_command,
     endgame_command,
@@ -128,6 +129,7 @@ def main():
     app.add_handler(CommandHandler("revertkill", revertkill_command))
     app.add_handler(CommandHandler("resetgame", resetgame_command))
     app.add_handler(CommandHandler("logkill", logkill_command))
+    app.add_handler(CommandHandler("wrapped", wrapped_command))
 
     # Kill dispute callbacks (Accept / Dispute inline buttons)
     app.add_handler(CallbackQueryHandler(kill_callback_handler, pattern=r"^kill_(accept|dispute):"))

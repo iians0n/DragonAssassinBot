@@ -1,7 +1,7 @@
 """Role management service — assignment, bonuses, and team GC messaging."""
 
 import logging
-import secrets
+import random
 from typing import List, Tuple
 from datetime import datetime
 
@@ -40,8 +40,8 @@ def assign_roles_to_team(team: int) -> List[Player]:
     if not players:
         return []
 
-    # Shuffle to randomize using cryptographically secure PRNG
-    secrets.SystemRandom().shuffle(players)
+    # Shuffle to randomize role assignments
+    random.shuffle(players)
 
     roles_to_assign = [ROLE_NINJA, ROLE_SNIPER, ROLE_PRESIDENT]
 
