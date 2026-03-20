@@ -1,5 +1,6 @@
 """/wrapped command handler — Assassins Wrapped preview & delivery."""
 
+import asyncio
 import io
 import logging
 from typing import List, Tuple
@@ -57,7 +58,8 @@ async def wrapped_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     _cached_cards = cards
 
     # Send every card to admin as a photo with caption
-    for player, img_bytes, (emoji, title, desc, quote) in cards:
+    preview_failed = 0
+    for i, (player, img_bytes, (emoji, title, desc, quote)) in enumerate(cards):
         kd = round(player.kills_total / max(player.deaths, 1), 2)
         caption = (
             f"<b>{player.name}</b> (@{player.username})\n"
@@ -66,12 +68,26 @@ async def wrapped_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"⚔️ Kills: {player.kills_total} | 💀 Deaths: {player.deaths}\n"
             f"📊 K/D: {kd} | 🏅 Points: {player.points}"
         )
-        await context.bot.send_photo(
-            chat_id=update.effective_user.id,
-            photo=io.BytesIO(img_bytes),
-            caption=caption,
-            parse_mode="HTML",
-        )
+        for attempt in range(3):
+            try:
+                await context.bot.send_photo(
+                    chat_id=update.effective_user.id,
+                    photo=io.BytesIO(img_bytes),
+                    caption=caption,
+                    parse_mode="HTML",
+                    read_timeout=60,
+                    write_timeout=60,
+                )
+                break
+            except Exception as e:
+                logger.warning(f"Wrapped preview send attempt {attempt+1} failed for {player.name}: {e}")
+                if attempt < 2:
+                    await asyncio.sleep(2)
+                else:
+                    preview_failed += 1
+        # Small delay between sends to avoid rate limits
+        if i < len(cards) - 1:
+            await asyncio.sleep(1.5)
 
     await update.message.reply_text(
         f"✅ <b>{len(cards)}</b> Wrapped cards generated!\n\n"
@@ -91,7 +107,7 @@ async def _send_wrapped(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent = 0
     failed = 0
 
-    for player, img_bytes, (emoji, title, desc, quote) in _cached_cards:
+    for i, (player, img_bytes, (emoji, title, desc, quote)) in enumerate(_cached_cards):
         kd = round(player.kills_total / max(player.deaths, 1), 2)
         caption = (
             f"🎮 <b>ASSASSINS WRAPPED 2026</b> 🎮\n\n"
@@ -104,17 +120,27 @@ async def _send_wrapped(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"<i>\"{quote}\"</i>\n\n"
             f"GG, see you next season! 🎯"
         )
-        try:
-            await context.bot.send_photo(
-                chat_id=player.user_id,
-                photo=io.BytesIO(img_bytes),
-                caption=caption,
-                parse_mode="HTML",
-            )
-            sent += 1
-        except Exception as e:
-            logger.warning(f"Could not send Wrapped to {player.name} ({player.user_id}): {e}")
-            failed += 1
+        for attempt in range(3):
+            try:
+                await context.bot.send_photo(
+                    chat_id=player.user_id,
+                    photo=io.BytesIO(img_bytes),
+                    caption=caption,
+                    parse_mode="HTML",
+                    read_timeout=60,
+                    write_timeout=60,
+                )
+                sent += 1
+                break
+            except Exception as e:
+                logger.warning(f"Wrapped send attempt {attempt+1} failed for {player.name} ({player.user_id}): {e}")
+                if attempt < 2:
+                    await asyncio.sleep(2)
+                else:
+                    failed += 1
+        # Small delay between sends to avoid rate limits
+        if i < len(_cached_cards) - 1:
+            await asyncio.sleep(1.5)
 
     # ── Group summary ─────────────────────────────────────────
     group_lines = [
