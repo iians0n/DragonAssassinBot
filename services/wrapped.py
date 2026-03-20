@@ -60,16 +60,16 @@ _TIER1 = [
 ]
 
 _TIER2 = [
-    ("tank",        "🛡️", "The Tank",         "Took one for the team. Repeatedly."),
+    ("tank",        "🛡️", "The Tank",         "Took hits so the team didn't have to."),
     ("immortal",    "💚", "Immortal",          "Barely scratched the whole week."),
-    ("phantom",     "👻", "The Phantom",       "Legends say they're still hiding."),
-    ("sacrifice",   "⚰️", "The Sacrifice",    "Fell so others could rise."),
+    ("phantom",     "👻", "The Phantom",       "The ultimate stealth player."),
+    ("sacrifice",   "⚰️", "The Sacrifice",    "A true hero — selfless to the end."),
     ("og",          "🏛️", "OG Assassin",      "First in. Set the tone."),
-    ("late",        "⏰", "Fashionably Late",  "Better late than never."),
+    ("late",        "⏰", "Fashionably Late",  "Better late than never!"),
     ("social",      "📢", "The Social One",    "Hired the most hitmen."),
     ("badges",      "🏅", "Badge Collector",   "Caught 'em all."),
     ("carry",       "💪", "Team Carry",        "Put the team on their back."),
-    ("ballonly",    "🏀", "Ball Only",         "Old-school assassin, no stealth."),
+    ("ballonly",    "🏀", "Ball Only",         "Old-school assassin, no stealth needed."),
 ]
 
 # Funny quotes / flavour text based on the award
@@ -77,37 +77,37 @@ _QUOTES = {
     "MVP":              "With great power comes... a lot of people trying to kill you.",
     "Sharpshooter":     "They say 100% of shots not taken are missed. You took 'em all.",
     "Shadow Blade":      "Like a ninja, but with more Telegram notifications.",
-    "Rampage King":      "Can't stop, won't stop. Seriously, someone stop them.",
-    "Bounty Hunter":    "It's not about the money. Wait, yes it is.",
-    "The Tank":          "Built different. Mostly out of scar tissue.",
+    "Rampage King":      "Can't stop, won't stop. Absolutely unstoppable.",
+    "Bounty Hunter":    "Cash, kills, and chaos. The triple threat.",
+    "The Tank":          "A true frontliner — your bravery kept the team alive.",
     "Immortal":          "Health bar? Never heard of her.",
-    "The Phantom":       "Are we sure they even joined the group chat?",
-    "The Sacrifice":     "Your contribution to the kill stats was... noted.",
+    "The Phantom":       "The art of war is not being seen. You mastered it.",
+    "The Sacrifice":     "Every hero needs courage. You had plenty.",
     "OG Assassin":       "They were here before it was cool. And before it was deadly.",
-    "Fashionably Late":  "Arrived just in time to see the leaderboard from the bottom.",
-    "The Social One":    "Managed to die while typing a message. Probably.",
-    "Badge Collector":   "Achievements > Actually winning.",
-    "Team Carry":        "My back hurts from carrying this entire team.",
-    "Ball Only":         "Who needs stealth when you have a 100% success rate of being seen?",
+    "Fashionably Late":  "Late arrival, big energy. Respect.",
+    "The Social One":    "Networking is a skill. You just happen to network with hitmen.",
+    "Badge Collector":   "Achievements unlocked. Respect earned.",
+    "Team Carry":        "Without you, the team would've needed a map.",
+    "Ball Only":         "No tricks, no stealth — just pure confidence.",
     "Wild": [
-        "Intelligence Agent? More like Professional Lurker.",
-        "Slow and steady wins the... oh wait, everyone else is dead.",
-        "Legend says if you stay still long enough, you become part of the background.",
-        "The Pacifist: Because weapons are too heavy anyway.",
-        "The Tea Sipper: ☕ This is fine.",
+        "Every team needs someone keeping an eye on things. That's you.",
+        "Strategic patience is an underrated skill. You nailed it.",
+        "Some play the game, others play the long game. You chose wisely.",
+        "Peace was always an option — and you chose it.",
+        "The calm in the storm. Every squad needs one.",
     ]
 }
 
 
 _WILD_CARDS = [
-    ("🕵️", "Intelligence Agent", "Gathered intel. Never struck."),
-    ("🐢", "The Turtle",         "Survived by hiding."),
-    ("😴", "The Sleeper Agent",  "Activated... never."),
-    ("🧊", "Ice Cold",           "Coolest player. Literally did nothing."),
-    ("🦎", "The Chameleon",      "Blended in so well, nobody noticed."),
-    ("🫖", "The Tea Sipper",     "Watched the chaos from safety."),
-    ("🌿", "The Pacifist",       "Believed in non-violence."),
-    ("🎭", "The Understudy",     "Supporting cast, but essential."),
+    ("🕵️", "Intelligence Agent", "Gathered intel for the team."),
+    ("🐢", "The Turtle",         "Played it safe and smart."),
+    ("😴", "The Sleeper Agent",  "Waiting for the perfect moment."),
+    ("🧆", "Ice Cold",           "Coolest player in the game."),
+    ("🦎", "The Chameleon",      "Blended in perfectly."),
+    ("🫖", "The Tea Sipper",     "Kept calm while the chaos unfolded."),
+    ("🌿", "The Pacifist",       "Chose peace. We respect that."),
+    ("🎭", "The Understudy",     "Every great show needs a great cast."),
 ]
 
 
