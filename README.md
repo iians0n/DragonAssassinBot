@@ -1,6 +1,6 @@
 # 🎯 DragonAssassinBot
 
-A Telegram bot for running a week-long campus Assassins game with real-time kill tracking, hidden roles, KD leaderboards, bounties, kill streaks, and achievements.
+A Telegram bot for running a week-long campus Assassins game with real-time kill tracking, hidden roles, KD leaderboards, kill streaks, and achievements.
 
 **Platform:** Telegram  
 **Target Users:** NUS college activity participants (4 teams, ~20–50 players)
@@ -10,9 +10,9 @@ A Telegram bot for running a week-long campus Assassins game with real-time kill
 ## 🎮 Game Rules
 
 - **4 teams** compete over 1 week
-- 🏓 **Ball kill** (`/ball`): +10 points, target cooldown 2 hours
-- 🗡️ **Post-it kill** (`/postit`): +5 points, same gender only, 1 hour cooldown
-- 🎯 **Max 2 ball kills per day** (for non-admins) — pending kills count toward the limit. Stealth kills are **unlimited**
+- 🏓 **Ball kill** (`/ball`): +5 points, target cooldown 2 hours
+- 🗡️ **Post-it kill** (`/postit`): +10 points, same gender only, 1 hour cooldown
+- 🎯 **Max 3 ball kills per day** (for non-admins) — stealth kills are **unlimited**
 - 🎭 **Hidden roles** — each team gets 1 Ninja, 1 Sniper, 1 President (randomly assigned daily)
 - **Game hours:** 9 AM – 11 PM SGT
 - **Most points wins!**
@@ -23,8 +23,8 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 
 | Role | Bonus |
 |---|---|
-| 🥷 Ninja | x2 points on post-it kills (+5 bonus) |
-| 🎯 Sniper | x2 points on ball kills (+10 bonus) |
+| 🥷 Ninja | x2 points on post-it kills (+10 bonus) |
+| 🎯 Sniper | x2 points on ball kills (+5 bonus) |
 | 👑 President | Worth 50 pts to killer. Becomes Normal after dying once |
 | 👤 Normal | No special bonus |
 
@@ -40,17 +40,15 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 |---|---|
 | `/start` | Show game info and register button |
 | `/register` | Sign up — enter name, gender |
-| `/profile` | View your stats, role, streak, and badges |
-| `/ball <name>` | Report a ball kill (ping pong throw) |
-| `/postit <name>` | Report a post-it kill (requires photo proof) |
+| `/profile` (or `/myprofile`) | View your stats, role, streak, and badges |
+| `/ball <name>` (or `/kill`) | Report a ball kill (ping pong throw) |
+| `/postit <name>` (or `/stealthkill`) | Report a post-it kill (requires photo proof) |
 | `/targets` | View all alive targets on other teams |
 | `/leaderboard` | View top 10 players + team rankings |
 | `/team` | View your team's stats and members |
 | `/stats <name>` | View detailed stats for any player |
-| `/bounty <name> <pts>` | Place a bounty on a player (costs your points) |
-| `/bounties` | View all active bounties |
 | `/countdown` | Time remaining in the game |
-| `/achievements` | View your unlocked badges |
+| `/achievements` (or `/badges`) | View your unlocked badges |
 | `/help` | Show list of all available commands |
 
 ### Admin Commands
@@ -69,10 +67,14 @@ Roles are secret — only your team's GC knows. Bonus points are applied at **en
 | `/revive <name>` | Revive a player (clear cooldown) | DM |
 | `/revertkill <name>` | Revert a kill (undo stats, points, roles) | DM |
 | `/resolvekill <id> approve/reject` | Resolve a disputed kill | DM |
+| `/logkill <killer> <target> [stealth/normal]` | Manually log a kill | DM |
 | `/setpoints <name> <amount>` | Set a player's points to exact value | DM |
 | `/addpoints <name> <amount>` | Add/subtract points (supports negative) | DM |
 | `/setrole <name> <role>` | Manually assign a role | DM/Group |
 | `/viewroles` | View all players and their roles | DM/Group |
+| `/resetgame CONFIRM` | Reset game for a new round (keeps player registrations) | DM |
+| `/wrapped` | Generate & preview Assassins Wrapped cards | DM |
+| `/wrapped send` | Deliver Wrapped cards to all players + group summary | DM |
 
 ---
 
@@ -95,7 +97,7 @@ Resolved dispute messages retain the kill time, type, and dispute reason for adm
 | Time | Event |
 |---|---|
 | 9:00 AM | 🎯 Game day starts |
-| 9 AM – 11 PM | Kills award base points (10/5). Role bonuses accumulate silently |
+| 9 AM – 11 PM | Kills award base points (5/10). Role bonuses accumulate silently |
 | Every 3 hours | 📊 Leaderboard posted to group |
 | 10:00 PM | ⚠️ "1 hour warning" |
 | 11:00 PM | 🌙 Day ends → bonuses applied → roles reshuffled → new roles sent to team GCs |
